@@ -8,7 +8,7 @@ import './App.css';
 type StatusFilter = 'all' | SlotStatus;
 
 export default function App() {
-  const { directors, slots, addDirector, removeDirector, addSlot, updateStatus, deleteSlot, findConflicts, getOverlapCount } = useSlots();
+  const { directors, slots, addDirector, removeDirector, restoreMissingDefaults, addSlot, updateStatus, deleteSlot, findConflicts, getOverlapCount } = useSlots();
 
   const [activeDirectorId, setActiveDirectorId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -16,7 +16,7 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [newDirectorName, setNewDirectorName] = useState('');
   const [addingDirector, setAddingDirector] = useState(false);
-  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+  const [removeModalId, setRemoveModalId] = useState<string | null>(null);
 
   const tabSlots = activeDirectorId
     ? slots.filter(s => s.directorIds.includes(activeDirectorId))
@@ -42,14 +42,11 @@ export default function App() {
     setActiveDirectorId(d.id);
   }
 
-  function handleRemoveDirector(id: string) {
-    if (confirmRemove === id) {
-      removeDirector(id);
-      setConfirmRemove(null);
-      if (activeDirectorId === id) setActiveDirectorId(null);
-    } else {
-      setConfirmRemove(id);
-    }
+  function confirmRemoveDirector() {
+    if (!removeModalId) return;
+    removeDirector(removeModalId);
+    if (activeDirectorId === removeModalId) setActiveDirectorId(null);
+    setRemoveModalId(null);
   }
 
   function pendingCount(directorId: string | null) {
@@ -82,7 +79,7 @@ export default function App() {
             <div key={d.id} className="nav-item-row">
               <button
                 className={`nav-item ${activeDirectorId === d.id ? 'active' : ''}`}
-                onClick={() => { setActiveDirectorId(d.id); setConfirmRemove(null); }}
+                onClick={() => { setActiveDirectorId(d.id); setRemoveModalId(null); }}
               >
                 <span className="nav-dot" style={{ background: d.color }} />
                 <span className="nav-name">{d.name}</span>
@@ -94,11 +91,11 @@ export default function App() {
               </button>
               {activeDirectorId === d.id && (
                 <button
-                  className={`nav-remove ${confirmRemove === d.id ? 'confirming' : ''}`}
-                  title={confirmRemove === d.id ? 'Click again to confirm removal' : 'Remove director'}
-                  onClick={() => handleRemoveDirector(d.id)}
+                  className="nav-remove"
+                  title="Remove director"
+                  onClick={() => setRemoveModalId(d.id)}
                 >
-                  {confirmRemove === d.id ? '?' : '×'}
+                  🗑
                 </button>
               )}
             </div>
@@ -125,6 +122,10 @@ export default function App() {
               + Add director
             </button>
           )}
+
+          <button className="btn-restore" onClick={restoreMissingDefaults}>
+            ↩ Restore removed directors
+          </button>
 
           <button className="btn-log-slot" onClick={() => setDrawerOpen(true)}>
             + Log availability slot
@@ -202,6 +203,30 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* ── Remove director modal ─────────────────────── */}
+      {removeModalId && (() => {
+        const director = directors.find(d => d.id === removeModalId)!;
+        const slotCount = slots.filter(s => s.directorIds.includes(removeModalId)).length;
+        return (
+          <div className="modal-overlay" onClick={() => setRemoveModalId(null)}>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+              <div className="modal-icon">🗑</div>
+              <h2 className="modal-title">Remove {director.name}?</h2>
+              <p className="modal-body">
+                This will permanently remove <strong>{director.name}</strong> from the dashboard.
+                {slotCount > 0 && (
+                  <> It will also remove or detach the <strong>{slotCount} slot{slotCount !== 1 ? 's' : ''}</strong> currently assigned to them.</>
+                )}
+              </p>
+              <div className="modal-actions">
+                <button className="modal-cancel" onClick={() => setRemoveModalId(null)}>Cancel</button>
+                <button className="modal-confirm" onClick={confirmRemoveDirector}>Yes, remove</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

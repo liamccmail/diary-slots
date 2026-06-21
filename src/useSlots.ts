@@ -94,6 +94,22 @@ export function useSlots() {
     return d;
   }
 
+  // Re-adds any default director that's been removed, preserving their original id/color
+  function restoreMissingDefaults() {
+    setDirectors(prev => {
+      const existingIds = new Set(prev.map(d => d.id));
+      const missing = DEFAULT_DIRECTORS.filter(d => !existingIds.has(d.id));
+      if (missing.length === 0) return prev;
+      // Insert each missing director back into their original position
+      const merged = [...prev];
+      missing.forEach(md => {
+        const idx = DEFAULT_DIRECTORS.indexOf(md);
+        merged.splice(idx, 0, md);
+      });
+      return merged;
+    });
+  }
+
   function removeDirector(id: string) {
     setDirectors(prev => prev.filter(d => d.id !== id));
     setSlots(prev => prev.filter(s => s.directorIds.some(did => did !== id) || s.directorIds.length > 1)
@@ -135,5 +151,5 @@ export function useSlots() {
     }).length; // includes the slot itself, so 1 = only this one
   }
 
-  return { directors, slots, addDirector, removeDirector, addSlot, updateStatus, deleteSlot, findConflicts, getOverlapCount };
+  return { directors, slots, addDirector, removeDirector, restoreMissingDefaults, addSlot, updateStatus, deleteSlot, findConflicts, getOverlapCount };
 }
