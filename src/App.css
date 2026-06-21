@@ -125,6 +125,13 @@ body {
   white-space: nowrap;
 }
 
+.nav-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
 .nav-badge {
   background: #374151;
   color: #d1d5db;
@@ -132,6 +139,13 @@ body {
   padding: 1px 7px;
   font-size: 0.72rem;
   font-weight: 700;
+}
+
+.nav-pending-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f59e0b;
   flex-shrink: 0;
 }
 

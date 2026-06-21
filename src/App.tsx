@@ -49,9 +49,12 @@ export default function App() {
     setRemoveModalId(null);
   }
 
-  function pendingCount(directorId: string | null) {
+  function slotCounts(directorId: string | null) {
     const src = directorId ? slots.filter(s => s.directorIds.includes(directorId)) : slots;
-    return src.filter(s => s.status === 'sent').length;
+    return {
+      total: src.length,
+      pending: src.filter(s => s.status === 'sent').length,
+    };
   }
 
   return (
@@ -69,8 +72,15 @@ export default function App() {
             onClick={() => setActiveDirectorId(null)}
           >
             <span className="nav-dot" style={{ background: '#6366f1' }} />
-            <span className="nav-name">All directors</span>
-            {pendingCount(null) > 0 && <span className="nav-badge">{pendingCount(null)}</span>}
+            <span className="nav-name-block">
+              <span className="nav-name">All directors</span>
+            </span>
+            {(() => { const c = slotCounts(null); return c.total > 0 && (
+              <span className="nav-badge-group">
+                <span className="nav-badge">{c.total}</span>
+                {c.pending > 0 && <span className="nav-pending-dot" title={`${c.pending} awaiting response`} />}
+              </span>
+            ); })()}
           </button>
 
           <div className="nav-divider" />
@@ -86,11 +96,12 @@ export default function App() {
                   <span className="nav-name">{d.name}</span>
                   {d.position && <span className="nav-position">{d.position}</span>}
                 </span>
-                {pendingCount(d.id) > 0 && (
-                  <span className="nav-badge" style={activeDirectorId === d.id ? { background: d.color } : {}}>
-                    {pendingCount(d.id)}
+                {(() => { const c = slotCounts(d.id); return c.total > 0 && (
+                  <span className="nav-badge-group">
+                    <span className="nav-badge" style={activeDirectorId === d.id ? { background: d.color } : {}}>{c.total}</span>
+                    {c.pending > 0 && <span className="nav-pending-dot" title={`${c.pending} awaiting response`} />}
                   </span>
-                )}
+                ); })()}
               </button>
               {activeDirectorId === d.id && (
                 <button
