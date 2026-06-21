@@ -162,7 +162,7 @@ export default function App() {
       </aside>
 
       {/* ── Main content ──────────────────────────────── */}
-      <main className="main">
+      <main key={activeDirectorId ?? 'all'} className="main">
         <div className="main-header">
           <div>
             <h2 className="view-title" style={{ color: accentColor }}>
