@@ -14,8 +14,8 @@ export default function App() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [conflicts, setConflicts] = useState<TimeSlot[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [newDirectorName, setNewDirectorName] = useState('');
   const [addingDirector, setAddingDirector] = useState(false);
+  const [newDir, setNewDir] = useState({ firstName: '', lastName: '', position: '' });
   const [removeModalId, setRemoveModalId] = useState<string | null>(null);
 
   const tabSlots = activeDirectorId
@@ -35,9 +35,9 @@ export default function App() {
 
   function handleAddDirector(e: React.FormEvent) {
     e.preventDefault();
-    if (!newDirectorName.trim()) return;
-    const d = addDirector(newDirectorName);
-    setNewDirectorName('');
+    if (!newDir.firstName.trim() || !newDir.lastName.trim()) return;
+    const d = addDirector(newDir.firstName, newDir.lastName, newDir.position);
+    setNewDir({ firstName: '', lastName: '', position: '' });
     setAddingDirector(false);
     setActiveDirectorId(d.id);
   }
@@ -82,7 +82,10 @@ export default function App() {
                 onClick={() => { setActiveDirectorId(d.id); setRemoveModalId(null); }}
               >
                 <span className="nav-dot" style={{ background: d.color }} />
-                <span className="nav-name">{d.name}</span>
+                <span className="nav-name-block">
+                  <span className="nav-name">{d.name}</span>
+                  {d.position && <span className="nav-position">{d.position}</span>}
+                </span>
                 {pendingCount(d.id) > 0 && (
                   <span className="nav-badge" style={activeDirectorId === d.id ? { background: d.color } : {}}>
                     {pendingCount(d.id)}
@@ -108,13 +111,25 @@ export default function App() {
               <input
                 autoFocus
                 type="text"
-                placeholder="Director name"
-                value={newDirectorName}
-                onChange={e => setNewDirectorName(e.target.value)}
+                placeholder="First name"
+                value={newDir.firstName}
+                onChange={e => setNewDir(d => ({ ...d, firstName: e.target.value }))}
+              />
+              <input
+                type="text"
+                placeholder="Last name"
+                value={newDir.lastName}
+                onChange={e => setNewDir(d => ({ ...d, lastName: e.target.value }))}
+              />
+              <input
+                type="text"
+                placeholder="Position (optional)"
+                value={newDir.position}
+                onChange={e => setNewDir(d => ({ ...d, position: e.target.value }))}
               />
               <div className="add-dir-actions">
                 <button type="submit">Add</button>
-                <button type="button" onClick={() => { setAddingDirector(false); setNewDirectorName(''); }}>Cancel</button>
+                <button type="button" onClick={() => { setAddingDirector(false); setNewDir({ firstName: '', lastName: '', position: '' }); }}>Cancel</button>
               </div>
             </form>
           ) : (

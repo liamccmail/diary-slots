@@ -3,7 +3,8 @@ export type SlotStatus = 'sent' | 'accepted' | 'declined' | 'expired';
 export interface Director {
   id: string;
   name: string;
-  color: string; // tailwind-style hex for the tab accent
+  position?: string;
+  color: string;
 }
 
 export interface TimeSlot {

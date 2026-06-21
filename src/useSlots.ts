@@ -87,9 +87,10 @@ export function useSlots() {
   useEffect(() => { localStorage.setItem(SLOTS_KEY, JSON.stringify(slots)); }, [slots]);
   useEffect(() => { localStorage.setItem(DIRECTORS_KEY, JSON.stringify(directors)); }, [directors]);
 
-  function addDirector(name: string) {
+  function addDirector(firstName: string, lastName: string, position?: string) {
+    const name = `${firstName.trim()} ${lastName.trim()}`.trim();
     const color = PALETTE[directors.length % PALETTE.length];
-    const d: Director = { id: crypto.randomUUID(), name: name.trim(), color };
+    const d: Director = { id: crypto.randomUUID(), name, position: position?.trim() || undefined, color };
     setDirectors(prev => [...prev, d]);
     return d;
   }
