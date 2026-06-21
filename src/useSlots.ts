@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import type { Director, TimeSlot } from './types';
 
-const SLOTS_KEY = 'diary-slots-v3';
-const DIRECTORS_KEY = 'diary-directors-v3';
+const SLOTS_KEY = 'diary-slots-v4';
+const DIRECTORS_KEY = 'diary-directors-v4';
 
 const PALETTE = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6','#a855f7'];
 
@@ -10,6 +10,60 @@ const DEFAULT_DIRECTORS: Director[] = [
   'Steve Partridge','Nick Carlisle','Chris Newman','Julia Hovells','Lisa McGrath',
   'Kelsey Walker','Mel Madjitey','Cassie Berry','Maxine Loftus','Julian Paine','Jo Casey',
 ].map((name, i) => ({ id: `default-${i}`, name, color: PALETTE[i % PALETTE.length] }));
+
+// Steve Partridge = default-0, Cassie Berry = default-7
+const DEFAULT_SLOTS: TimeSlot[] = [
+  // ── Deepak (RP, In person) — Steve Partridge + Cassie Berry ──────────
+  {
+    id: 'sample-1',
+    date: '2026-06-22',
+    startTime: '16:00', endTime: '17:30',
+    directorIds: ['default-0', 'default-7'],
+    sentTo: 'Deepak', purpose: 'RP — In person',
+    status: 'declined',
+    sentAt: '2026-06-20T10:00:00.000Z', notes: '',
+  },
+  {
+    id: 'sample-2',
+    date: '2026-06-24',
+    startTime: '16:45', endTime: '17:00',
+    directorIds: ['default-0', 'default-7'],
+    sentTo: 'Deepak', purpose: 'RP — In person',
+    status: 'accepted',
+    sentAt: '2026-06-20T10:00:00.000Z', notes: '',
+  },
+  // ── Margaret (Street, Teams/Zoom) — Steve Partridge ──────────────────
+  {
+    id: 'sample-3',
+    date: '2026-06-22',
+    startTime: '16:30', endTime: '17:30',
+    directorIds: ['default-0'],
+    sentTo: 'Margaret', purpose: 'Street — Teams/Zoom',
+    status: 'sent',
+    sentAt: '2026-06-20T11:00:00.000Z',
+    notes: 'Needs to be after the MGHLN meeting 10 am 24th',
+  },
+  {
+    id: 'sample-4',
+    date: '2026-06-23',
+    startTime: '12:00', endTime: '13:00',
+    directorIds: ['default-0'],
+    sentTo: 'Margaret', purpose: 'Street — Teams/Zoom',
+    status: 'sent',
+    sentAt: '2026-06-20T11:00:00.000Z',
+    notes: 'Needs to be after the MGHLN meeting 10 am 24th',
+  },
+  {
+    id: 'sample-5',
+    date: '2026-06-24',
+    startTime: '17:00', endTime: '18:00',
+    directorIds: ['default-0'],
+    sentTo: 'Margaret', purpose: 'Street — Teams/Zoom',
+    status: 'sent',
+    sentAt: '2026-06-20T11:00:00.000Z',
+    notes: 'Needs to be after the MGHLN meeting 10 am 24th',
+  },
+];
 
 function load<T>(key: string, fallback: T): T {
   try { return JSON.parse(localStorage.getItem(key) ?? 'null') ?? fallback; }
@@ -25,7 +79,10 @@ export function useSlots() {
     const hasRealData = stored.some(d => DEFAULT_DIRECTORS.some(dd => dd.name === d.name));
     return stored.length > 0 && hasRealData ? stored : DEFAULT_DIRECTORS;
   });
-  const [slots, setSlots] = useState<TimeSlot[]>(() => load(SLOTS_KEY, []));
+  const [slots, setSlots] = useState<TimeSlot[]>(() => {
+    ['diary-slots-v2','diary-slots-v3'].forEach(k => localStorage.removeItem(k));
+    return load(SLOTS_KEY, DEFAULT_SLOTS);
+  });
 
   useEffect(() => { localStorage.setItem(SLOTS_KEY, JSON.stringify(slots)); }, [slots]);
   useEffect(() => { localStorage.setItem(DIRECTORS_KEY, JSON.stringify(directors)); }, [directors]);
