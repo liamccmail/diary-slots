@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Director, TimeSlot } from './types';
+import { parseAvailabilityText, formatParsedSlot, type ParsedSlot } from './parseSlots';
 
 interface Props {
   directors: Director[];
@@ -9,119 +10,175 @@ interface Props {
   onCheckConflicts: (date: string, start: string, end: string, directorIds: string[]) => void;
 }
 
-const empty = {
-  date: '',
-  startTime: '',
-  endTime: '',
+const emptyManual = {
+  date: '', startTime: '', endTime: '',
   directorIds: [] as string[],
-  sentTo: '',
-  purpose: '',
-  status: 'sent' as const,
-  notes: '',
+  sentTo: '', purpose: '', status: 'sent' as const, notes: '',
 };
 
 export default function AddSlotForm({ directors, onAdd, conflicts, conflictDirectorNames, onCheckConflicts }: Props) {
-  const [form, setForm] = useState(empty);
+  const [mode, setMode] = useState<'manual' | 'paste'>('manual');
+  const [manual, setManual] = useState(emptyManual);
   const [error, setError] = useState('');
 
-  function setField(key: keyof typeof empty, value: string | string[]) {
-    const next = { ...form, [key]: value };
-    setForm(next);
+  // Paste mode state
+  const [pasteText, setPasteText] = useState('');
+  const [parsedSlots, setParsedSlots] = useState<ParsedSlot[]>([]);
+  const [pasteMeta, setPasteMeta] = useState({ directorIds: [] as string[], sentTo: '', purpose: '', notes: '' });
+  const [pasteError, setPasteError] = useState('');
+
+  // ── Manual mode ─────────────────────────────────────────
+  function setField(key: keyof typeof emptyManual, value: string | string[]) {
+    const next = { ...manual, [key]: value };
+    setManual(next);
     if (next.date && next.startTime && next.endTime && next.directorIds.length > 0) {
       onCheckConflicts(next.date, next.startTime, next.endTime, next.directorIds);
     }
   }
 
-  function toggleDirector(id: string) {
-    const next = form.directorIds.includes(id)
-      ? form.directorIds.filter(d => d !== id)
-      : [...form.directorIds, id];
+  function toggleDir(id: string) {
+    const next = manual.directorIds.includes(id)
+      ? manual.directorIds.filter(d => d !== id)
+      : [...manual.directorIds, id];
     setField('directorIds', next);
   }
 
-  function submit(e: React.FormEvent) {
+  function submitManual(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.date || !form.startTime || !form.endTime || !form.sentTo || !form.purpose) {
-      setError('Please fill in all required fields.');
-      return;
+    if (!manual.date || !manual.startTime || !manual.endTime || !manual.sentTo || !manual.purpose) {
+      setError('Please fill in all required fields.'); return;
     }
-    if (form.directorIds.length === 0) {
-      setError('Please select at least one director.');
-      return;
-    }
-    if (form.startTime >= form.endTime) {
-      setError('End time must be after start time.');
-      return;
-    }
+    if (manual.directorIds.length === 0) { setError('Select at least one director.'); return; }
+    if (manual.startTime >= manual.endTime) { setError('End time must be after start time.'); return; }
     setError('');
-    onAdd(form);
-    setForm(empty);
+    onAdd(manual);
+    setManual(emptyManual);
+  }
+
+  // ── Paste mode ───────────────────────────────────────────
+  function handlePasteChange(text: string) {
+    setPasteText(text);
+    setParsedSlots(parseAvailabilityText(text));
+    setPasteError('');
+  }
+
+  function togglePasteDir(id: string) {
+    setPasteMeta(m => ({
+      ...m,
+      directorIds: m.directorIds.includes(id)
+        ? m.directorIds.filter(d => d !== id)
+        : [...m.directorIds, id],
+    }));
+  }
+
+  function submitPaste(e: React.FormEvent) {
+    e.preventDefault();
+    if (parsedSlots.length === 0) { setPasteError('No valid time slots detected — check the format hint below.'); return; }
+    if (pasteMeta.directorIds.length === 0) { setPasteError('Select at least one director.'); return; }
+    if (!pasteMeta.sentTo || !pasteMeta.purpose) { setPasteError('Sent to and Purpose are required.'); return; }
+    parsedSlots.forEach(s => onAdd({ ...s, ...pasteMeta, status: 'sent' }));
+    setPasteText('');
+    setParsedSlots([]);
+    setPasteMeta({ directorIds: [], sentTo: '', purpose: '', notes: '' });
+    setPasteError('');
+  }
+
+  // ── Shared director chips ────────────────────────────────
+  function DirectorChips({ selected, onToggle }: { selected: string[]; onToggle: (id: string) => void }) {
+    if (directors.length === 0) return <p className="no-directors-hint">Add a director first.</p>;
+    return (
+      <div className="director-picker">
+        <span className="picker-label">Directors *</span>
+        <div className="director-chips">
+          {directors.map(d => (
+            <button
+              key={d.id} type="button"
+              className={`director-chip ${selected.includes(d.id) ? 'selected' : ''}`}
+              style={selected.includes(d.id)
+                ? { background: d.color, borderColor: d.color, color: '#fff' }
+                : { borderColor: d.color, color: d.color }}
+              onClick={() => onToggle(d.id)}
+            >{d.name}</button>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <form onSubmit={submit} className="add-form">
-      <h2>Log a sent availability slot</h2>
+    <div className="add-form">
+      {/* Mode toggle */}
+      <div className="mode-tabs">
+        <button className={`mode-tab ${mode === 'manual' ? 'active' : ''}`} type="button" onClick={() => setMode('manual')}>Manual entry</button>
+        <button className={`mode-tab ${mode === 'paste' ? 'active' : ''}`} type="button" onClick={() => setMode('paste')}>Paste availability</button>
+      </div>
 
-      {conflicts.length > 0 && (
-        <div className="conflict-warning">
-          Conflict: {conflictDirectorNames.join(', ')} {conflictDirectorNames.length > 1 ? 'are' : 'is'} already offered for an overlapping time.
-        </div>
-      )}
-      {error && <div className="form-error">{error}</div>}
+      {/* ── Manual ── */}
+      {mode === 'manual' && (
+        <form onSubmit={submitManual}>
+          {conflicts.length > 0 && (
+            <div className="conflict-warning">
+              Conflict: {conflictDirectorNames.join(', ')} {conflictDirectorNames.length > 1 ? 'are' : 'is'} already offered for this time.
+            </div>
+          )}
+          {error && <div className="form-error">{error}</div>}
 
-      {directors.length === 0 ? (
-        <p className="no-directors-hint">Add a director above before logging slots.</p>
-      ) : (
-        <div className="director-picker">
-          <span className="picker-label">Directors *</span>
-          <div className="director-chips">
-            {directors.map(d => (
-              <button
-                key={d.id}
-                type="button"
-                className={`director-chip ${form.directorIds.includes(d.id) ? 'selected' : ''}`}
-                style={form.directorIds.includes(d.id) ? { background: d.color, borderColor: d.color, color: '#fff' } : { borderColor: d.color, color: d.color }}
-                onClick={() => toggleDirector(d.id)}
-              >
-                {d.name}
-              </button>
-            ))}
+          <DirectorChips selected={manual.directorIds} onToggle={toggleDir} />
+
+          <div className="form-row">
+            <label>Date * <input type="date" value={manual.date} onChange={e => setField('date', e.target.value)} /></label>
+            <label>Start * <input type="time" value={manual.startTime} onChange={e => setField('startTime', e.target.value)} /></label>
+            <label>End * <input type="time" value={manual.endTime} onChange={e => setField('endTime', e.target.value)} /></label>
           </div>
-        </div>
+          <div className="form-row">
+            <label>Sent to * <input type="text" placeholder="Client name or email" value={manual.sentTo} onChange={e => setField('sentTo', e.target.value)} /></label>
+            <label>Purpose * <input type="text" placeholder="Meeting subject" value={manual.purpose} onChange={e => setField('purpose', e.target.value)} /></label>
+          </div>
+          <label>Notes <input type="text" placeholder="Optional notes" value={manual.notes} onChange={e => setField('notes', e.target.value)} /></label>
+          <button type="submit">Add slot</button>
+        </form>
       )}
 
-      <div className="form-row">
-        <label>
-          Date *
-          <input type="date" value={form.date} onChange={e => setField('date', e.target.value)} />
-        </label>
-        <label>
-          Start *
-          <input type="time" value={form.startTime} onChange={e => setField('startTime', e.target.value)} />
-        </label>
-        <label>
-          End *
-          <input type="time" value={form.endTime} onChange={e => setField('endTime', e.target.value)} />
-        </label>
-      </div>
+      {/* ── Paste ── */}
+      {mode === 'paste' && (
+        <form onSubmit={submitPaste}>
+          {pasteError && <div className="form-error">{pasteError}</div>}
 
-      <div className="form-row">
-        <label>
-          Sent to *
-          <input type="text" placeholder="Client name or email" value={form.sentTo} onChange={e => setField('sentTo', e.target.value)} />
-        </label>
-        <label>
-          Purpose *
-          <input type="text" placeholder="Meeting subject" value={form.purpose} onChange={e => setField('purpose', e.target.value)} />
-        </label>
-      </div>
+          <label className="paste-label">
+            Paste your availability
+            <textarea
+              className="paste-area"
+              placeholder={`Paste or type times, e.g.\n\nMon 23 Jun  9:00-10:00, 11:30-12:30\nTue 24 Jun  14:00-15:00\n25/06  9-10, 13-14`}
+              value={pasteText}
+              onChange={e => handlePasteChange(e.target.value)}
+              rows={6}
+            />
+          </label>
 
-      <label>
-        Notes
-        <input type="text" placeholder="Optional notes" value={form.notes} onChange={e => setField('notes', e.target.value)} />
-      </label>
+          {parsedSlots.length > 0 && (
+            <div className="parsed-preview">
+              <span className="picker-label">Detected {parsedSlots.length} slot{parsedSlots.length > 1 ? 's' : ''}</span>
+              <ul className="parsed-list">
+                {parsedSlots.map((s, i) => <li key={i}>{formatParsedSlot(s)}</li>)}
+              </ul>
+            </div>
+          )}
 
-      <button type="submit">Add slot</button>
-    </form>
+          <DirectorChips selected={pasteMeta.directorIds} onToggle={togglePasteDir} />
+
+          <div className="form-row">
+            <label>Sent to * <input type="text" placeholder="Client name or email" value={pasteMeta.sentTo} onChange={e => setPasteMeta(m => ({ ...m, sentTo: e.target.value }))} /></label>
+            <label>Purpose * <input type="text" placeholder="Meeting subject" value={pasteMeta.purpose} onChange={e => setPasteMeta(m => ({ ...m, purpose: e.target.value }))} /></label>
+          </div>
+          <label>Notes <input type="text" placeholder="Optional notes" value={pasteMeta.notes} onChange={e => setPasteMeta(m => ({ ...m, notes: e.target.value }))} /></label>
+
+          <button type="submit" disabled={parsedSlots.length === 0}>
+            {parsedSlots.length > 0 ? `Add ${parsedSlots.length} slot${parsedSlots.length > 1 ? 's' : ''}` : 'Add slots'}
+          </button>
+
+          <p className="paste-hint">Supported: <code>23 Jun 9:00-10:00</code> · <code>23/06 9-10</code> · <code>Mon 23rd June 9am-5pm</code>. Multiple slots per line separated by commas.</p>
+        </form>
+      )}
+    </div>
   );
 }

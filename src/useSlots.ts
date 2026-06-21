@@ -68,5 +68,15 @@ export function useSlots() {
     });
   }
 
-  return { directors, slots, addDirector, removeDirector, addSlot, updateStatus, deleteSlot, findConflicts };
+  // How many active slots (including this one) share the same director + overlap this window
+  function getOverlapCount(slot: TimeSlot): number {
+    return slots.filter(s => {
+      if (s.status === 'declined' || s.status === 'expired') return false;
+      if (s.date !== slot.date) return false;
+      if (!s.directorIds.some(did => slot.directorIds.includes(did))) return false;
+      return s.startTime < slot.endTime && s.endTime > slot.startTime;
+    }).length; // includes the slot itself, so 1 = only this one
+  }
+
+  return { directors, slots, addDirector, removeDirector, addSlot, updateStatus, deleteSlot, findConflicts, getOverlapCount };
 }

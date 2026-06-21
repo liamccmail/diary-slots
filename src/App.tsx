@@ -8,7 +8,7 @@ import './App.css';
 type StatusFilter = 'all' | SlotStatus;
 
 export default function App() {
-  const { directors, slots, addDirector, removeDirector, addSlot, updateStatus, deleteSlot, findConflicts } = useSlots();
+  const { directors, slots, addDirector, removeDirector, addSlot, updateStatus, deleteSlot, findConflicts, getOverlapCount } = useSlots();
 
   const [activeDirectorId, setActiveDirectorId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -174,6 +174,7 @@ export default function App() {
               key={slot.id}
               slot={slot}
               directors={directors}
+              overlapCount={getOverlapCount(slot)}
               onStatusChange={updateStatus}
               onDelete={deleteSlot}
             />
