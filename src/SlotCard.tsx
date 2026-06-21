@@ -3,9 +3,9 @@ import type { Director, TimeSlot, SlotStatus } from './types';
 interface Props {
   slot: TimeSlot;
   directors: Director[];
-  overlapCount: number; // 1=green, 2=amber, 3+=red
+  overlapCount: number;
   onStatusChange: (id: string, status: SlotStatus) => void;
-  onDelete: (id: string) => void;
+  onRequestDelete: (id: string) => void;
 }
 
 const STATUS_LABELS: Record<SlotStatus, string> = {
@@ -39,7 +39,7 @@ function formatSentAt(iso: string) {
   });
 }
 
-export default function SlotCard({ slot, directors, overlapCount, onStatusChange, onDelete }: Props) {
+export default function SlotCard({ slot, directors, overlapCount, onStatusChange, onRequestDelete }: Props) {
   const slotDirectors = directors.filter(d => slot.directorIds.includes(d.id));
   const color = trafficColor(overlapCount, slot.status);
   const label = trafficLabel(overlapCount, slot.status);
@@ -84,7 +84,7 @@ export default function SlotCard({ slot, directors, overlapCount, onStatusChange
               Mark {STATUS_LABELS[s]}
             </button>
           ))}
-        <button className="btn-danger" onClick={() => onDelete(slot.id)}>Delete</button>
+        <button className="btn-danger" onClick={() => onRequestDelete(slot.id)}>Delete</button>
       </div>
     </div>
   );

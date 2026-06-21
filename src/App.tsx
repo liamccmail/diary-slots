@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useSlots } from './useSlots';
 import AddSlotForm from './AddSlotForm';
 import SlotCard from './SlotCard';
+import ConfirmModal from './ConfirmModal';
 import type { SlotStatus, TimeSlot } from './types';
 import './App.css';
 
@@ -17,6 +18,7 @@ export default function App() {
   const [addingDirector, setAddingDirector] = useState(false);
   const [newDir, setNewDir] = useState({ firstName: '', lastName: '', position: '' });
   const [removeModalId, setRemoveModalId] = useState<string | null>(null);
+  const [deleteSlotId, setDeleteSlotId] = useState<string | null>(null);
 
   const tabSlots = activeDirectorId
     ? slots.filter(s => s.directorIds.includes(activeDirectorId))
@@ -203,7 +205,7 @@ export default function App() {
               directors={directors}
               overlapCount={getOverlapCount(slot)}
               onStatusChange={updateStatus}
-              onDelete={deleteSlot}
+              onRequestDelete={setDeleteSlotId}
             />
           ))
         )}
@@ -235,22 +237,35 @@ export default function App() {
         const director = directors.find(d => d.id === removeModalId)!;
         const slotCount = slots.filter(s => s.directorIds.includes(removeModalId)).length;
         return (
-          <div className="modal-overlay" onClick={() => setRemoveModalId(null)}>
-            <div className="modal" onClick={e => e.stopPropagation()}>
-              <div className="modal-icon">🗑</div>
-              <h2 className="modal-title">Remove {director.name}?</h2>
-              <p className="modal-body">
-                This will permanently remove <strong>{director.name}</strong> from the dashboard.
-                {slotCount > 0 && (
-                  <> It will also remove or detach the <strong>{slotCount} slot{slotCount !== 1 ? 's' : ''}</strong> currently assigned to them.</>
-                )}
-              </p>
-              <div className="modal-actions">
-                <button className="modal-cancel" onClick={() => setRemoveModalId(null)}>Cancel</button>
-                <button className="modal-confirm" onClick={confirmRemoveDirector}>Yes, remove</button>
-              </div>
-            </div>
-          </div>
+          <ConfirmModal
+            title={`Remove ${director.name}?`}
+            body={<>
+              This will permanently remove <strong>{director.name}</strong> from the dashboard.
+              {slotCount > 0 && <> It will also remove or detach the <strong>{slotCount} slot{slotCount !== 1 ? 's' : ''}</strong> currently assigned to them.</>}
+            </>}
+            confirmLabel="Yes, remove"
+            onConfirm={confirmRemoveDirector}
+            onCancel={() => setRemoveModalId(null)}
+          />
+        );
+      })()}
+
+      {/* ── Delete slot modal ─────────────────────────── */}
+      {deleteSlotId && (() => {
+        const slot = slots.find(s => s.id === deleteSlotId)!;
+        const d = new Date(slot.date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+        return (
+          <ConfirmModal
+            title="Delete this slot?"
+            body={<>
+              <strong>{slot.purpose}</strong> → {slot.sentTo}<br />
+              <span style={{ color: '#94a3b8', fontSize: '0.9em' }}>{d} &nbsp; {slot.startTime}–{slot.endTime}</span>
+              <br /><br />This cannot be undone.
+            </>}
+            confirmLabel="Delete slot"
+            onConfirm={() => { deleteSlot(deleteSlotId); setDeleteSlotId(null); }}
+            onCancel={() => setDeleteSlotId(null)}
+          />
         );
       })()}
     </div>
