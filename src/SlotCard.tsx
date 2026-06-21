@@ -1,7 +1,8 @@
-import type { TimeSlot, SlotStatus } from './types';
+import type { Director, TimeSlot, SlotStatus } from './types';
 
 interface Props {
   slot: TimeSlot;
+  directors: Director[];
   onStatusChange: (id: string, status: SlotStatus) => void;
   onDelete: (id: string) => void;
 }
@@ -25,7 +26,9 @@ function formatSentAt(iso: string) {
   });
 }
 
-export default function SlotCard({ slot, onStatusChange, onDelete }: Props) {
+export default function SlotCard({ slot, directors, onStatusChange, onDelete }: Props) {
+  const slotDirectors = directors.filter(d => slot.directorIds.includes(d.id));
+
   return (
     <div className={`slot-card status-${slot.status}`}>
       <div className="slot-header">
@@ -33,6 +36,14 @@ export default function SlotCard({ slot, onStatusChange, onDelete }: Props) {
           {formatDate(slot.date)} &nbsp; {slot.startTime}–{slot.endTime}
         </span>
         <span className={`badge badge-${slot.status}`}>{STATUS_LABELS[slot.status]}</span>
+      </div>
+
+      <div className="slot-directors">
+        {slotDirectors.map(d => (
+          <span key={d.id} className="director-tag" style={{ background: d.color + '22', color: d.color, borderColor: d.color + '55' }}>
+            {d.name}
+          </span>
+        ))}
       </div>
 
       <div className="slot-body">
@@ -50,9 +61,7 @@ export default function SlotCard({ slot, onStatusChange, onDelete }: Props) {
               Mark {STATUS_LABELS[s]}
             </button>
           ))}
-        <button className="btn-danger" onClick={() => onDelete(slot.id)}>
-          Delete
-        </button>
+        <button className="btn-danger" onClick={() => onDelete(slot.id)}>Delete</button>
       </div>
     </div>
   );
