@@ -3,13 +3,13 @@ import { useSlots } from './useSlots';
 import AddSlotForm from './AddSlotForm';
 import SlotCard from './SlotCard';
 import ConfirmModal from './ConfirmModal';
-import type { SlotStatus, TimeSlot } from './types';
+import type { SlotStatus, TimeSlot, Director } from './types';
 import './App.css';
 
 type StatusFilter = 'all' | SlotStatus;
 
 export default function App() {
-  const { directors, slots, addDirector, removeDirector, restoreMissingDefaults, addSlot, updateStatus, deleteSlot, findConflicts, getOverlapCount } = useSlots();
+  const { directors, slots, addDirector, removeDirector, restoreMissingDefaults, addSlot, updateStatus, deleteSlot, findConflicts, getOverlapCount, getShortWindowIds, findShortWindowNeighbors } = useSlots();
 
   const [activeDirectorId, setActiveDirectorId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -29,6 +29,11 @@ export default function App() {
   const [newDir, setNewDir] = useState({ firstName: '', lastName: '', position: '' });
   const [removeModalId, setRemoveModalId] = useState<string | null>(null);
   const [deleteSlotId, setDeleteSlotId] = useState<string | null>(null);
+
+  type ShortWindowAlert = { newSlot: TimeSlot; items: Array<{ neighbor: TimeSlot; directors: Director[]; gapMins: number }> };
+  const [shortWindowAlert, setShortWindowAlert] = useState<ShortWindowAlert | null>(null);
+
+  const shortWindowIds = getShortWindowIds();
 
   const tabSlots = activeDirectorId
     ? slots.filter(s => s.directorIds.includes(activeDirectorId))
@@ -279,6 +284,26 @@ export default function App() {
           ))}
         </div>
 
+        {/* ── Short window alert ── */}
+        {shortWindowAlert && (
+          <div className="short-window-alert" role="alert">
+            <div className="swa-icon">⚠</div>
+            <div className="swa-body">
+              <strong>Short window detected</strong>
+              <ul className="swa-list">
+                {shortWindowAlert.items.map((item, i) => (
+                  <li key={i}>
+                    <span className="swa-directors">{item.directors.map(d => d.name).join(' & ')}</span>
+                    {' '}has only <strong>{item.gapMins} min</strong> between{' '}
+                    <em>"{item.neighbor.purpose}"</em> ({item.neighbor.startTime}–{item.neighbor.endTime}) and the new slot.
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button className="swa-dismiss" onClick={() => setShortWindowAlert(null)} title="Dismiss">×</button>
+          </div>
+        )}
+
         {searchedSlots.length === 0 ? (
           <div className="empty-state">
             {isSearchActive ? (
@@ -302,6 +327,7 @@ export default function App() {
               slot={slot}
               directors={directors}
               overlapCount={getOverlapCount(slot)}
+              isShortWindow={shortWindowIds.has(slot.id)}
               onStatusChange={updateStatus}
               onRequestDelete={setDeleteSlotId}
             />
@@ -319,7 +345,22 @@ export default function App() {
             </div>
             <AddSlotForm
               directors={directors}
-              onAdd={slot => { addSlot(slot); setConflicts([]); setDrawerOpen(false); }}
+              onAdd={slot => {
+                const newSlot = addSlot(slot);
+                setConflicts([]);
+                setDrawerOpen(false);
+                const neighbors = findShortWindowNeighbors(newSlot);
+                if (neighbors.length > 0) {
+                  setShortWindowAlert({
+                    newSlot,
+                    items: neighbors.map(n => ({
+                      neighbor: n.neighbor,
+                      directors: directors.filter(d => n.sharedDirectorIds.includes(d.id)),
+                      gapMins: n.gapMins,
+                    })),
+                  });
+                }
+              }}
               conflicts={conflicts}
               conflictDirectorNames={conflictDirectorNames}
               onCheckConflicts={(date, start, end, directorIds) =>

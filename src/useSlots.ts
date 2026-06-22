@@ -70,6 +70,21 @@ function load<T>(key: string, fallback: T): T {
   catch { return fallback; }
 }
 
+function timeToMins(t: string): number {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+// Returns the gap in minutes between two non-overlapping slots, or null if they overlap
+function gapBetween(a: TimeSlot, b: TimeSlot): number | null {
+  if (a.date !== b.date) return null;
+  const aEnd = timeToMins(a.endTime), aStart = timeToMins(a.startTime);
+  const bEnd = timeToMins(b.endTime), bStart = timeToMins(b.startTime);
+  if (aEnd <= bStart) return bStart - aEnd;
+  if (bEnd <= aStart) return aStart - bEnd;
+  return null; // overlapping — already caught by conflict detection
+}
+
 export function useSlots() {
   const [directors, setDirectors] = useState<Director[]>(() => {
     // Clear stale keys from earlier versions
@@ -118,9 +133,40 @@ export function useSlots() {
       .filter(s => s.directorIds.length > 0));
   }
 
-  function addSlot(slot: Omit<TimeSlot, 'id' | 'sentAt'>) {
+  function addSlot(slot: Omit<TimeSlot, 'id' | 'sentAt'>): TimeSlot {
     const newSlot: TimeSlot = { ...slot, id: crypto.randomUUID(), sentAt: new Date().toISOString() };
     setSlots(prev => [newSlot, ...prev]);
+    return newSlot;
+  }
+
+  // IDs of all active slots that have a ≤15 min gap with another active slot sharing a director
+  function getShortWindowIds(): Set<string> {
+    const affected = new Set<string>();
+    const active = slots.filter(s => s.status !== 'declined' && s.status !== 'expired');
+    for (let i = 0; i < active.length; i++) {
+      for (let j = i + 1; j < active.length; j++) {
+        const gap = gapBetween(active[i], active[j]);
+        if (gap === null || gap > 15) continue;
+        const shared = active[i].directorIds.filter(id => active[j].directorIds.includes(id));
+        if (shared.length === 0) continue;
+        affected.add(active[i].id);
+        affected.add(active[j].id);
+      }
+    }
+    return affected;
+  }
+
+  // Given a freshly-created slot, find existing slots within 15 mins that share a director
+  function findShortWindowNeighbors(newSlot: TimeSlot): Array<{ neighbor: TimeSlot; sharedDirectorIds: string[]; gapMins: number }> {
+    return slots
+      .filter(s => s.status !== 'declined' && s.status !== 'expired')
+      .flatMap(s => {
+        const gap = gapBetween(newSlot, s);
+        if (gap === null || gap > 15) return [];
+        const shared = newSlot.directorIds.filter(id => s.directorIds.includes(id));
+        if (shared.length === 0) return [];
+        return [{ neighbor: s, sharedDirectorIds: shared, gapMins: gap }];
+      });
   }
 
   function updateStatus(id: string, status: TimeSlot['status']) {
@@ -152,5 +198,5 @@ export function useSlots() {
     }).length; // includes the slot itself, so 1 = only this one
   }
 
-  return { directors, slots, addDirector, removeDirector, restoreMissingDefaults, addSlot, updateStatus, deleteSlot, findConflicts, getOverlapCount };
+  return { directors, slots, addDirector, removeDirector, restoreMissingDefaults, addSlot, updateStatus, deleteSlot, findConflicts, getOverlapCount, getShortWindowIds, findShortWindowNeighbors };
 }

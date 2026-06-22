@@ -4,6 +4,7 @@ interface Props {
   slot: TimeSlot;
   directors: Director[];
   overlapCount: number;
+  isShortWindow?: boolean;
   onStatusChange: (id: string, status: SlotStatus) => void;
   onRequestDelete: (id: string) => void;
 }
@@ -39,7 +40,7 @@ function formatSentAt(iso: string) {
   });
 }
 
-export default function SlotCard({ slot, directors, overlapCount, onStatusChange, onRequestDelete }: Props) {
+export default function SlotCard({ slot, directors, overlapCount, isShortWindow, onStatusChange, onRequestDelete }: Props) {
   const slotDirectors = directors.filter(d => slot.directorIds.includes(d.id));
   const color = trafficColor(overlapCount, slot.status);
   const label = trafficLabel(overlapCount, slot.status);
@@ -80,6 +81,12 @@ export default function SlotCard({ slot, directors, overlapCount, onStatusChange
         {slot.notes && <p className="slot-notes">{slot.notes}</p>}
         <span className="slot-sent-at">Logged {formatSentAt(slot.sentAt)}</span>
       </div>
+
+      {isShortWindow && (
+        <div className="short-window-flag">
+          <span>⚠</span> Short gap with another appointment
+        </div>
+      )}
 
       <div className="slot-actions">
         {(['sent', 'accepted', 'declined', 'expired'] as SlotStatus[])
