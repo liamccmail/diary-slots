@@ -657,6 +657,8 @@ body {
   font-size: 0.88rem;
 }
 
+.slot-body strong { font-size: 1.05rem; }
+
 .slot-person { color: #6366f1; }
 
 .slot-notes {
