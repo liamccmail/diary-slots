@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSlots } from './useSlots';
 import AddSlotForm from './AddSlotForm';
 import SlotCard from './SlotCard';
@@ -13,8 +13,15 @@ export default function App() {
 
   const [activeDirectorId, setActiveDirectorId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [searchDirFilter, setSearchDirFilter] = useState<string[]>([]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchText), 500);
+    return () => clearTimeout(t);
+  }, [searchText]);
   const [conflicts, setConflicts] = useState<TimeSlot[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [addingDirector, setAddingDirector] = useState(false);
@@ -30,7 +37,7 @@ export default function App() {
     ? tabSlots
     : tabSlots.filter(s => s.status === statusFilter);
 
-  const q = searchText.toLowerCase().trim();
+  const q = debouncedSearch.toLowerCase().trim();
   const searchedSlots = visibleSlots.filter(slot => {
     if (q && !slot.purpose.toLowerCase().includes(q) && !slot.sentTo.toLowerCase().includes(q)) return false;
     if (searchDirFilter.length > 0 && !searchDirFilter.every(id => slot.directorIds.includes(id))) return false;
@@ -41,7 +48,13 @@ export default function App() {
 
   function clearSearch() {
     setSearchText('');
+    setDebouncedSearch('');
     setSearchDirFilter([]);
+  }
+
+  function closeSearch() {
+    clearSearch();
+    setSearchOpen(false);
   }
 
   function toggleSearchDir(id: string) {
@@ -192,45 +205,61 @@ export default function App() {
               {tabSlots.filter(s => s.status === 'sent').length} slot{tabSlots.filter(s => s.status === 'sent').length !== 1 ? 's' : ''} awaiting response
             </p>
           </div>
+          <button
+            className={`search-toggle ${searchOpen ? 'active' : ''}`}
+            onClick={() => searchOpen ? closeSearch() : setSearchOpen(true)}
+            title={searchOpen ? 'Close search' : 'Search slots'}
+          >
+            <svg className="search-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="16.5" y1="16.5" x2="22" y2="22" />
+            </svg>
+            {isSearchActive && <span className="search-toggle-dot" />}
+          </button>
         </div>
 
-        {/* ── Search ── */}
-        <div className="search-section">
-          <div className="search-input-row">
-            <span className="search-icon">⌕</span>
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Search by meeting name or client…"
-              value={searchText}
-              onChange={e => setSearchText(e.target.value)}
-            />
-            {searchText && (
-              <button className="search-clear" onClick={() => setSearchText('')}>×</button>
+        {/* ── Search panel ── */}
+        {searchOpen && (
+          <div className="search-section">
+            <div className="search-input-row">
+              <svg className="search-icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="22" y2="22" />
+              </svg>
+              <input
+                autoFocus
+                type="text"
+                className="search-input"
+                placeholder="Search by meeting name or client…"
+                value={searchText}
+                onChange={e => setSearchText(e.target.value)}
+              />
+              {searchText && (
+                <button className="search-clear" onClick={() => { setSearchText(''); setDebouncedSearch(''); }}>×</button>
+              )}
+            </div>
+            <div className="search-dir-filter">
+              {directors.map(d => (
+                <button
+                  key={d.id}
+                  className={`search-dir-chip ${searchDirFilter.includes(d.id) ? 'selected' : ''}`}
+                  style={searchDirFilter.includes(d.id)
+                    ? { background: d.color + '22', color: d.color, borderColor: d.color }
+                    : {}}
+                  onClick={() => toggleSearchDir(d.id)}
+                >
+                  <span className="chip-dot" style={{ background: d.color }} />
+                  {d.name}
+                </button>
+              ))}
+            </div>
+            {isSearchActive && (
+              <div className="search-active-bar">
+                <span>{searchedSlots.length} result{searchedSlots.length !== 1 ? 's' : ''}</span>
+                <button className="search-clear-all" onClick={clearSearch}>Clear filters ×</button>
+              </div>
             )}
           </div>
-          <div className="search-dir-filter">
-            {directors.map(d => (
-              <button
-                key={d.id}
-                className={`search-dir-chip ${searchDirFilter.includes(d.id) ? 'selected' : ''}`}
-                style={searchDirFilter.includes(d.id)
-                  ? { background: d.color + '22', color: d.color, borderColor: d.color }
-                  : {}}
-                onClick={() => toggleSearchDir(d.id)}
-              >
-                <span className="chip-dot" style={{ background: d.color }} />
-                {d.name}
-              </button>
-            ))}
-          </div>
-          {isSearchActive && (
-            <div className="search-active-bar">
-              <span>{searchedSlots.length} result{searchedSlots.length !== 1 ? 's' : ''}</span>
-              <button className="search-clear-all" onClick={clearSearch}>Clear filters ×</button>
-            </div>
-          )}
-        </div>
+        )}
 
         <div className="status-filter-bar">
           {(['all', 'sent', 'accepted', 'declined', 'expired'] as StatusFilter[]).map(f => (
