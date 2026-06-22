@@ -9,7 +9,7 @@ import './App.css';
 type StatusFilter = 'all' | SlotStatus;
 
 export default function App() {
-  const { directors, slots, addDirector, removeDirector, restoreMissingDefaults, addSlot, updateStatus, deleteSlot, findConflicts, getOverlapCount, getShortWindowIds, findShortWindowNeighbors } = useSlots();
+  const { directors, slots, addDirector, removeDirector, restoreMissingDefaults, addSlot, updateSlot, updateStatus, deleteSlot, findConflicts, getOverlapCount, getShortWindowIds, findShortWindowNeighbors } = useSlots();
 
   const [activeDirectorId, setActiveDirectorId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -27,6 +27,7 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [addingDirector, setAddingDirector] = useState(false);
   const [newDir, setNewDir] = useState({ firstName: '', lastName: '', position: '' });
+  const [editingSlot, setEditingSlot] = useState<TimeSlot | null>(null);
   const [removeModalId, setRemoveModalId] = useState<string | null>(null);
   const [deleteSlotId, setDeleteSlotId] = useState<string | null>(null);
 
@@ -330,6 +331,7 @@ export default function App() {
               isShortWindow={shortWindowIds.has(slot.id)}
               onStatusChange={updateStatus}
               onRequestDelete={setDeleteSlotId}
+              onRequestEdit={s => { setEditingSlot(s); setDrawerOpen(true); }}
             />
           ))
         )}
@@ -337,14 +339,15 @@ export default function App() {
 
       {/* ── Slide-out drawer ──────────────────────────── */}
       {drawerOpen && (
-        <div className="drawer-overlay" onClick={() => setDrawerOpen(false)}>
+        <div className="drawer-overlay" onClick={() => { setDrawerOpen(false); setEditingSlot(null); }}>
           <div className="drawer" onClick={e => e.stopPropagation()}>
             <div className="drawer-header">
-              <h2>Log availability slot</h2>
-              <button className="drawer-close" onClick={() => setDrawerOpen(false)}>×</button>
+              <h2>{editingSlot ? 'Edit slot' : 'Log availability slot'}</h2>
+              <button className="drawer-close" onClick={() => { setDrawerOpen(false); setEditingSlot(null); }}>×</button>
             </div>
             <AddSlotForm
               directors={directors}
+              editingSlot={editingSlot ?? undefined}
               onAdd={slot => {
                 const newSlot = addSlot(slot);
                 setConflicts([]);
@@ -353,6 +356,23 @@ export default function App() {
                 if (neighbors.length > 0) {
                   setShortWindowAlert({
                     newSlot,
+                    items: neighbors.map(n => ({
+                      neighbor: n.neighbor,
+                      directors: directors.filter(d => n.sharedDirectorIds.includes(d.id)),
+                      gapMins: n.gapMins,
+                    })),
+                  });
+                }
+              }}
+              onUpdate={(id, data) => {
+                const updated = updateSlot(id, data);
+                setConflicts([]);
+                setDrawerOpen(false);
+                setEditingSlot(null);
+                const neighbors = findShortWindowNeighbors(updated);
+                if (neighbors.length > 0) {
+                  setShortWindowAlert({
+                    newSlot: updated,
                     items: neighbors.map(n => ({
                       neighbor: n.neighbor,
                       directors: directors.filter(d => n.sharedDirectorIds.includes(d.id)),

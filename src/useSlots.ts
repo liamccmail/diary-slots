@@ -139,6 +139,13 @@ export function useSlots() {
     return newSlot;
   }
 
+  function updateSlot(id: string, data: Omit<TimeSlot, 'id' | 'sentAt'>): TimeSlot {
+    const existing = slots.find(s => s.id === id)!;
+    const updated: TimeSlot = { ...data, id, sentAt: existing.sentAt };
+    setSlots(prev => prev.map(s => s.id === id ? updated : s));
+    return updated;
+  }
+
   // IDs of all active slots that have a ≤15 min gap with another active slot sharing a director
   function getShortWindowIds(): Set<string> {
     const affected = new Set<string>();
@@ -198,5 +205,5 @@ export function useSlots() {
     }).length; // includes the slot itself, so 1 = only this one
   }
 
-  return { directors, slots, addDirector, removeDirector, restoreMissingDefaults, addSlot, updateStatus, deleteSlot, findConflicts, getOverlapCount, getShortWindowIds, findShortWindowNeighbors };
+  return { directors, slots, addDirector, removeDirector, restoreMissingDefaults, addSlot, updateSlot, updateStatus, deleteSlot, findConflicts, getOverlapCount, getShortWindowIds, findShortWindowNeighbors };
 }

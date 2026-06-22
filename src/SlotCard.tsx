@@ -7,6 +7,7 @@ interface Props {
   isShortWindow?: boolean;
   onStatusChange: (id: string, status: SlotStatus) => void;
   onRequestDelete: (id: string) => void;
+  onRequestEdit: (slot: TimeSlot) => void;
 }
 
 const STATUS_LABELS: Record<SlotStatus, string> = {
@@ -40,7 +41,7 @@ function formatSentAt(iso: string) {
   });
 }
 
-export default function SlotCard({ slot, directors, overlapCount, isShortWindow, onStatusChange, onRequestDelete }: Props) {
+export default function SlotCard({ slot, directors, overlapCount, isShortWindow, onStatusChange, onRequestDelete, onRequestEdit }: Props) {
   const slotDirectors = directors.filter(d => slot.directorIds.includes(d.id));
   const color = trafficColor(overlapCount, slot.status);
   const label = trafficLabel(overlapCount, slot.status);
@@ -96,6 +97,7 @@ export default function SlotCard({ slot, directors, overlapCount, isShortWindow,
               Mark {STATUS_LABELS[s]}
             </button>
           ))}
+        <button className="btn-edit" onClick={() => onRequestEdit(slot)}>Edit</button>
         <button className="btn-danger" onClick={() => onRequestDelete(slot.id)}>Delete</button>
       </div>
     </div>

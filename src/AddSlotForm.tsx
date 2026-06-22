@@ -1,26 +1,51 @@
-import { useState } from 'react';
-import type { Director, TimeSlot, AppointmentType } from './types';
+import { useState, useEffect } from 'react';
+import type { Director, TimeSlot, SlotStatus, AppointmentType } from './types';
 import { parseAvailabilityText, formatParsedSlot, type ParsedSlot } from './parseSlots';
 
 interface Props {
   directors: Director[];
+  editingSlot?: TimeSlot;
   onAdd: (slot: Omit<TimeSlot, 'id' | 'sentAt'>) => void;
+  onUpdate?: (id: string, data: Omit<TimeSlot, 'id' | 'sentAt'>) => void;
   conflicts: TimeSlot[];
   conflictDirectorNames: string[];
   onCheckConflicts: (date: string, start: string, end: string, directorIds: string[]) => void;
 }
 
-const emptyManual = {
+const emptyManual: {
+  date: string; startTime: string; endTime: string;
+  directorIds: string[]; sentTo: string; purpose: string;
+  status: SlotStatus; appointmentType: AppointmentType; notes: string;
+} = {
   date: '', startTime: '', endTime: '',
-  directorIds: [] as string[],
-  sentTo: '', purpose: '', status: 'sent' as const,
-  appointmentType: 'in-person' as AppointmentType, notes: '',
+  directorIds: [],
+  sentTo: '', purpose: '', status: 'sent',
+  appointmentType: 'in-person', notes: '',
 };
 
-export default function AddSlotForm({ directors, onAdd, conflicts, conflictDirectorNames, onCheckConflicts }: Props) {
+export default function AddSlotForm({ directors, editingSlot, onAdd, onUpdate, conflicts, conflictDirectorNames, onCheckConflicts }: Props) {
   const [mode, setMode] = useState<'manual' | 'paste'>('manual');
   const [manual, setManual] = useState(emptyManual);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (editingSlot) {
+      setManual({
+        date: editingSlot.date,
+        startTime: editingSlot.startTime,
+        endTime: editingSlot.endTime,
+        directorIds: editingSlot.directorIds,
+        sentTo: editingSlot.sentTo,
+        purpose: editingSlot.purpose,
+        status: editingSlot.status,
+        appointmentType: editingSlot.appointmentType ?? 'in-person',
+        notes: editingSlot.notes ?? '',
+      });
+      setMode('manual');
+    } else {
+      setManual(emptyManual);
+    }
+  }, [editingSlot]);
 
   // Paste mode state
   const [pasteText, setPasteText] = useState('');
@@ -52,8 +77,12 @@ export default function AddSlotForm({ directors, onAdd, conflicts, conflictDirec
     if (manual.directorIds.length === 0) { setError('Select at least one director.'); return; }
     if (manual.startTime >= manual.endTime) { setError('End time must be after start time.'); return; }
     setError('');
-    onAdd(manual);
-    setManual(emptyManual);
+    if (editingSlot && onUpdate) {
+      onUpdate(editingSlot.id, manual);
+    } else {
+      onAdd(manual);
+      setManual(emptyManual);
+    }
   }
 
   // ── Paste mode ───────────────────────────────────────────
@@ -108,11 +137,13 @@ export default function AddSlotForm({ directors, onAdd, conflicts, conflictDirec
 
   return (
     <div className="add-form">
-      {/* Mode toggle */}
-      <div className="mode-tabs">
-        <button className={`mode-tab ${mode === 'manual' ? 'active' : ''}`} type="button" onClick={() => setMode('manual')}>Manual entry</button>
-        <button className={`mode-tab ${mode === 'paste' ? 'active' : ''}`} type="button" onClick={() => setMode('paste')}>Paste availability</button>
-      </div>
+      {/* Mode toggle — hidden when editing */}
+      {!editingSlot && (
+        <div className="mode-tabs">
+          <button className={`mode-tab ${mode === 'manual' ? 'active' : ''}`} type="button" onClick={() => setMode('manual')}>Manual entry</button>
+          <button className={`mode-tab ${mode === 'paste' ? 'active' : ''}`} type="button" onClick={() => setMode('paste')}>Paste availability</button>
+        </div>
+      )}
 
       {/* ── Manual ── */}
       {mode === 'manual' && (
@@ -144,7 +175,9 @@ export default function AddSlotForm({ directors, onAdd, conflicts, conflictDirec
             <label>Purpose * <input type="text" placeholder="Meeting subject" value={manual.purpose} onChange={e => setField('purpose', e.target.value)} /></label>
           </div>
           <label>Notes <input type="text" placeholder="Optional notes" value={manual.notes} onChange={e => setField('notes', e.target.value)} /></label>
-          <button type="submit">Add slot</button>
+          <button type="submit" className={editingSlot ? 'btn-save-edit' : ''}>
+            {editingSlot ? 'Save changes' : 'Add slot'}
+          </button>
         </form>
       )}
 
