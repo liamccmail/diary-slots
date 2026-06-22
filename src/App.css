@@ -283,6 +283,119 @@ body {
   font-size: 0.85rem;
 }
 
+/* ── Search ──────────────────────────────────────────── */
+.search-section {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.search-input-row {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0 12px;
+  gap: 8px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.search-input-row:focus-within {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+
+.search-icon {
+  color: #94a3b8;
+  font-size: 1.2rem;
+  line-height: 1;
+  user-select: none;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 10px 0;
+  font-size: 0.9rem;
+  color: #1a1a2e;
+  background: transparent;
+}
+
+.search-input::placeholder { color: #94a3b8; }
+
+.search-clear {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.12s;
+}
+
+.search-clear:hover { color: #475569; }
+
+.search-dir-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.search-dir-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 4px 11px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.search-dir-chip:hover:not(.selected) { border-color: #6366f1; color: #6366f1; }
+.search-dir-chip.selected { font-weight: 700; }
+
+.chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.search-active-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  color: #4338ca;
+  font-weight: 600;
+}
+
+.search-clear-all {
+  background: none;
+  border: none;
+  color: #6366f1;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.12s;
+}
+
+.search-clear-all:hover { color: #4338ca; }
+
 /* Status filter bar */
 .status-filter-bar {
   display: flex;

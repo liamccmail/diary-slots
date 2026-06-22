@@ -13,6 +13,8 @@ export default function App() {
 
   const [activeDirectorId, setActiveDirectorId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [searchText, setSearchText] = useState('');
+  const [searchDirFilter, setSearchDirFilter] = useState<string[]>([]);
   const [conflicts, setConflicts] = useState<TimeSlot[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [addingDirector, setAddingDirector] = useState(false);
@@ -27,6 +29,24 @@ export default function App() {
   const visibleSlots = statusFilter === 'all'
     ? tabSlots
     : tabSlots.filter(s => s.status === statusFilter);
+
+  const q = searchText.toLowerCase().trim();
+  const searchedSlots = visibleSlots.filter(slot => {
+    if (q && !slot.purpose.toLowerCase().includes(q) && !slot.sentTo.toLowerCase().includes(q)) return false;
+    if (searchDirFilter.length > 0 && !searchDirFilter.every(id => slot.directorIds.includes(id))) return false;
+    return true;
+  });
+
+  const isSearchActive = q.length > 0 || searchDirFilter.length > 0;
+
+  function clearSearch() {
+    setSearchText('');
+    setSearchDirFilter([]);
+  }
+
+  function toggleSearchDir(id: string) {
+    setSearchDirFilter(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }
 
   const activeDirector = directors.find(d => d.id === activeDirectorId) ?? null;
   const accentColor = activeDirector?.color ?? '#6366f1';
@@ -174,6 +194,44 @@ export default function App() {
           </div>
         </div>
 
+        {/* ── Search ── */}
+        <div className="search-section">
+          <div className="search-input-row">
+            <span className="search-icon">⌕</span>
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search by meeting name or client…"
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+            />
+            {searchText && (
+              <button className="search-clear" onClick={() => setSearchText('')}>×</button>
+            )}
+          </div>
+          <div className="search-dir-filter">
+            {directors.map(d => (
+              <button
+                key={d.id}
+                className={`search-dir-chip ${searchDirFilter.includes(d.id) ? 'selected' : ''}`}
+                style={searchDirFilter.includes(d.id)
+                  ? { background: d.color + '22', color: d.color, borderColor: d.color }
+                  : {}}
+                onClick={() => toggleSearchDir(d.id)}
+              >
+                <span className="chip-dot" style={{ background: d.color }} />
+                {d.name}
+              </button>
+            ))}
+          </div>
+          {isSearchActive && (
+            <div className="search-active-bar">
+              <span>{searchedSlots.length} result{searchedSlots.length !== 1 ? 's' : ''}</span>
+              <button className="search-clear-all" onClick={clearSearch}>Clear filters ×</button>
+            </div>
+          )}
+        </div>
+
         <div className="status-filter-bar">
           {(['all', 'sent', 'accepted', 'declined', 'expired'] as StatusFilter[]).map(f => (
             <button
@@ -190,15 +248,24 @@ export default function App() {
           ))}
         </div>
 
-        {visibleSlots.length === 0 ? (
+        {searchedSlots.length === 0 ? (
           <div className="empty-state">
-            <p>No slots here yet.</p>
-            <button className="btn-log-slot-empty" onClick={() => setDrawerOpen(true)}>
-              + Log your first slot
-            </button>
+            {isSearchActive ? (
+              <>
+                <p>No slots match your search.</p>
+                <button className="btn-log-slot-empty" onClick={clearSearch}>Clear filters</button>
+              </>
+            ) : (
+              <>
+                <p>No slots here yet.</p>
+                <button className="btn-log-slot-empty" onClick={() => setDrawerOpen(true)}>
+                  + Log your first slot
+                </button>
+              </>
+            )}
           </div>
         ) : (
-          visibleSlots.map(slot => (
+          searchedSlots.map(slot => (
             <SlotCard
               key={slot.id}
               slot={slot}
