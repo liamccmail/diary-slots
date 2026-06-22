@@ -165,8 +165,8 @@ export default function AddSlotForm({ directors, editingSlot, onAdd, onUpdate, c
             </div>
           </div>
 
+          <label>Date * <input type="date" value={manual.date} onChange={e => setField('date', e.target.value)} /></label>
           <div className="form-row">
-            <label>Date * <input type="date" value={manual.date} onChange={e => setField('date', e.target.value)} /></label>
             <label>Start * <input type="time" value={manual.startTime} onChange={e => setField('startTime', e.target.value)} /></label>
             <label>End * <input type="time" value={manual.endTime} onChange={e => setField('endTime', e.target.value)} /></label>
           </div>
