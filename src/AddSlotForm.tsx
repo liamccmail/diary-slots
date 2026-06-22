@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Director, TimeSlot } from './types';
+import type { Director, TimeSlot, AppointmentType } from './types';
 import { parseAvailabilityText, formatParsedSlot, type ParsedSlot } from './parseSlots';
 
 interface Props {
@@ -13,7 +13,8 @@ interface Props {
 const emptyManual = {
   date: '', startTime: '', endTime: '',
   directorIds: [] as string[],
-  sentTo: '', purpose: '', status: 'sent' as const, notes: '',
+  sentTo: '', purpose: '', status: 'sent' as const,
+  appointmentType: 'in-person' as AppointmentType, notes: '',
 };
 
 export default function AddSlotForm({ directors, onAdd, conflicts, conflictDirectorNames, onCheckConflicts }: Props) {
@@ -24,7 +25,7 @@ export default function AddSlotForm({ directors, onAdd, conflicts, conflictDirec
   // Paste mode state
   const [pasteText, setPasteText] = useState('');
   const [parsedSlots, setParsedSlots] = useState<ParsedSlot[]>([]);
-  const [pasteMeta, setPasteMeta] = useState({ directorIds: [] as string[], sentTo: '', purpose: '', notes: '' });
+  const [pasteMeta, setPasteMeta] = useState({ directorIds: [] as string[], sentTo: '', purpose: '', appointmentType: 'in-person' as AppointmentType, notes: '' });
   const [pasteError, setPasteError] = useState('');
 
   // ── Manual mode ─────────────────────────────────────────
@@ -79,7 +80,7 @@ export default function AddSlotForm({ directors, onAdd, conflicts, conflictDirec
     parsedSlots.forEach(s => onAdd({ ...s, ...pasteMeta, status: 'sent' }));
     setPasteText('');
     setParsedSlots([]);
-    setPasteMeta({ directorIds: [], sentTo: '', purpose: '', notes: '' });
+    setPasteMeta({ directorIds: [], sentTo: '', purpose: '', appointmentType: 'in-person', notes: '' });
     setPasteError('');
   }
 
@@ -125,6 +126,14 @@ export default function AddSlotForm({ directors, onAdd, conflicts, conflictDirec
 
           <DirectorChips selected={manual.directorIds} onToggle={toggleDir} />
 
+          <div className="appt-type-toggle">
+            <span className="picker-label">Type</span>
+            <div className="appt-type-pills">
+              <button type="button" className={`appt-pill ${manual.appointmentType === 'in-person' ? 'active' : ''}`} onClick={() => setField('appointmentType', 'in-person')}>📍 In Person</button>
+              <button type="button" className={`appt-pill ${manual.appointmentType === 'online' ? 'active' : ''}`} onClick={() => setField('appointmentType', 'online')}>💻 Online</button>
+            </div>
+          </div>
+
           <div className="form-row">
             <label>Date * <input type="date" value={manual.date} onChange={e => setField('date', e.target.value)} /></label>
             <label>Start * <input type="time" value={manual.startTime} onChange={e => setField('startTime', e.target.value)} /></label>
@@ -165,6 +174,14 @@ export default function AddSlotForm({ directors, onAdd, conflicts, conflictDirec
           )}
 
           <DirectorChips selected={pasteMeta.directorIds} onToggle={togglePasteDir} />
+
+          <div className="appt-type-toggle">
+            <span className="picker-label">Type</span>
+            <div className="appt-type-pills">
+              <button type="button" className={`appt-pill ${pasteMeta.appointmentType === 'in-person' ? 'active' : ''}`} onClick={() => setPasteMeta(m => ({ ...m, appointmentType: 'in-person' }))}>📍 In Person</button>
+              <button type="button" className={`appt-pill ${pasteMeta.appointmentType === 'online' ? 'active' : ''}`} onClick={() => setPasteMeta(m => ({ ...m, appointmentType: 'online' }))}>💻 Online</button>
+            </div>
+          </div>
 
           <div className="form-row">
             <label>Sent to * <input type="text" placeholder="Client name or email" value={pasteMeta.sentTo} onChange={e => setPasteMeta(m => ({ ...m, sentTo: e.target.value }))} /></label>

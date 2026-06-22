@@ -72,6 +72,11 @@ export default function SlotCard({ slot, directors, overlapCount, onStatusChange
       <div className="slot-body">
         <strong>{slot.purpose}</strong>
         <span className="slot-person">→ {slot.sentTo}</span>
+        {slot.appointmentType && (
+          <span className={`appt-type-badge appt-type-${slot.appointmentType}`}>
+            {slot.appointmentType === 'in-person' ? '📍 In Person' : '💻 Online'}
+          </span>
+        )}
         {slot.notes && <p className="slot-notes">{slot.notes}</p>}
         <span className="slot-sent-at">Logged {formatSentAt(slot.sentAt)}</span>
       </div>

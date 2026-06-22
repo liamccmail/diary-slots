@@ -14,6 +14,7 @@ export default function App() {
   const [activeDirectorId, setActiveDirectorId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchClosing, setSearchClosing] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [searchDirFilter, setSearchDirFilter] = useState<string[]>([]);
@@ -54,7 +55,8 @@ export default function App() {
 
   function closeSearch() {
     clearSearch();
-    setSearchOpen(false);
+    setSearchClosing(true);
+    setTimeout(() => { setSearchOpen(false); setSearchClosing(false); }, 200);
   }
 
   function toggleSearchDir(id: string) {
@@ -206,7 +208,7 @@ export default function App() {
             </p>
           </div>
           <button
-            className={`search-toggle ${searchOpen ? 'active' : ''}`}
+            className={`search-toggle ${searchOpen && !searchClosing ? 'active' : ''}`}
             onClick={() => searchOpen ? closeSearch() : setSearchOpen(true)}
             title={searchOpen ? 'Close search' : 'Search slots'}
           >
@@ -220,7 +222,7 @@ export default function App() {
 
         {/* ── Search panel ── */}
         {searchOpen && (
-          <div className="search-section">
+          <div className={`search-section${searchClosing ? ' closing' : ''}`}>
             <div className="search-input-row">
               <svg className="search-icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="22" y2="22" />

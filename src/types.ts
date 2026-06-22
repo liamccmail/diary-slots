@@ -1,4 +1,5 @@
 export type SlotStatus = 'sent' | 'accepted' | 'declined' | 'expired';
+export type AppointmentType = 'in-person' | 'online';
 
 export interface Director {
   id: string;
@@ -12,10 +13,11 @@ export interface TimeSlot {
   date: string;        // YYYY-MM-DD
   startTime: string;   // HH:mm
   endTime: string;     // HH:mm
-  directorIds: string[]; // which directors are involved
-  sentTo: string;      // external contact (client / other party)
+  directorIds: string[];
+  sentTo: string;
   purpose: string;
   status: SlotStatus;
-  sentAt: string;      // ISO datetime logged
+  sentAt: string;
+  appointmentType?: AppointmentType;
   notes?: string;
 }
