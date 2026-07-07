@@ -641,14 +641,16 @@ body {
 .slot-entry {
   flex: 1;
   min-width: 200px;
-  padding: 10px 14px 10px 12px;
+  padding: 14px 16px 14px 14px;
   border-left: 3px solid transparent;
   background: #fafbfc;
+  margin: 10px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
 .slot-entry--divider {
   border-left: 3px solid transparent;
-  box-shadow: -1px 0 0 #e2e8f0;
 }
 
 .slot-entry-top {
