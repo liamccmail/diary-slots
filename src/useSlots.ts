@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Director, TimeSlot } from './types';
 
-const SLOTS_KEY = 'diary-slots-v4';
+const SLOTS_KEY = 'diary-slots-v6';
 const DIRECTORS_KEY = 'diary-directors-v4';
 
 const PALETTE = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6','#a855f7'];
@@ -11,59 +11,156 @@ const DEFAULT_DIRECTORS: Director[] = [
   'Kelsey Walker','Mel Madjitey','Cassie Berry','Maxine Loftus','Julian Paine','Jo Casey',
 ].map((name, i) => ({ id: `default-${i}`, name, color: PALETTE[i % PALETTE.length] }));
 
-// Steve Partridge = default-0, Cassie Berry = default-7
-const DEFAULT_SLOTS: TimeSlot[] = [
-  // ── Deepak (RP, In person) — Steve Partridge + Cassie Berry ──────────
+// Sample data only loaded in dev — production starts empty
+// default-0 Steve Partridge  default-1 Nick Carlisle   default-2 Chris Newman
+// default-3 Julia Hovells    default-4 Lisa McGrath    default-5 Kelsey Walker
+// default-6 Mel Madjitey     default-7 Cassie Berry    default-8 Maxine Loftus
+// default-9 Julian Paine     default-10 Jo Casey
+const DEV_SLOTS: TimeSlot[] = [
+  // ── Deepak — RP In Person (Steve + Cassie) — 3 slots ─────────────────
   {
-    id: 'sample-1',
-    date: '2026-06-22',
-    startTime: '16:00', endTime: '17:30',
-    directorIds: ['default-0', 'default-7'],
-    sentTo: 'Deepak', purpose: 'RP — In person',
-    status: 'declined',
-    sentAt: '2026-06-20T10:00:00.000Z', notes: '',
+    id: 'sample-1', date: '2026-07-08', startTime: '10:00', endTime: '11:00',
+    directorIds: ['default-0', 'default-7'], sentTo: 'Deepak', purpose: 'RP — In Person',
+    status: 'declined', appointmentType: 'in-person',
+    sentAt: '2026-07-04T09:00:00.000Z', notes: 'Prefers morning if possible',
   },
   {
-    id: 'sample-2',
-    date: '2026-06-24',
-    startTime: '16:45', endTime: '17:00',
-    directorIds: ['default-0', 'default-7'],
-    sentTo: 'Deepak', purpose: 'RP — In person',
-    status: 'accepted',
-    sentAt: '2026-06-20T10:00:00.000Z', notes: '',
-  },
-  // ── Margaret (Street, Teams/Zoom) — Steve Partridge ──────────────────
-  {
-    id: 'sample-3',
-    date: '2026-06-22',
-    startTime: '16:30', endTime: '17:30',
-    directorIds: ['default-0'],
-    sentTo: 'Margaret', purpose: 'Street — Teams/Zoom',
-    status: 'sent',
-    sentAt: '2026-06-20T11:00:00.000Z',
-    notes: 'Needs to be after the MGHLN meeting 10 am 24th',
+    id: 'sample-2', date: '2026-07-10', startTime: '14:00', endTime: '15:00',
+    directorIds: ['default-0', 'default-7'], sentTo: 'Deepak', purpose: 'RP — In Person',
+    status: 'sent', appointmentType: 'in-person',
+    sentAt: '2026-07-04T09:00:00.000Z', notes: 'Prefers morning if possible',
   },
   {
-    id: 'sample-4',
-    date: '2026-06-23',
-    startTime: '12:00', endTime: '13:00',
-    directorIds: ['default-0'],
-    sentTo: 'Margaret', purpose: 'Street — Teams/Zoom',
-    status: 'sent',
-    sentAt: '2026-06-20T11:00:00.000Z',
-    notes: 'Needs to be after the MGHLN meeting 10 am 24th',
+    id: 'sample-3', date: '2026-07-14', startTime: '11:00', endTime: '12:00',
+    directorIds: ['default-0', 'default-7'], sentTo: 'Deepak', purpose: 'RP — In Person',
+    status: 'sent', appointmentType: 'in-person',
+    sentAt: '2026-07-04T09:00:00.000Z', notes: '',
+  },
+
+  // ── Margaret — Street Strategy (Steve) — 3 slots ─────────────────────
+  {
+    id: 'sample-4', date: '2026-07-09', startTime: '09:00', endTime: '10:00',
+    directorIds: ['default-0'], sentTo: 'Margaret', purpose: 'Street — Teams/Zoom',
+    status: 'sent', appointmentType: 'online',
+    sentAt: '2026-07-05T10:00:00.000Z', notes: 'Needs to be after the MGHLN meeting 10am 24th',
   },
   {
-    id: 'sample-5',
-    date: '2026-06-24',
-    startTime: '17:00', endTime: '18:00',
-    directorIds: ['default-0'],
-    sentTo: 'Margaret', purpose: 'Street — Teams/Zoom',
-    status: 'sent',
-    sentAt: '2026-06-20T11:00:00.000Z',
-    notes: 'Needs to be after the MGHLN meeting 10 am 24th',
+    id: 'sample-5', date: '2026-07-11', startTime: '13:00', endTime: '14:00',
+    directorIds: ['default-0'], sentTo: 'Margaret', purpose: 'Street — Teams/Zoom',
+    status: 'sent', appointmentType: 'online',
+    sentAt: '2026-07-05T10:00:00.000Z', notes: '',
+  },
+  {
+    id: 'sample-6', date: '2026-07-15', startTime: '15:00', endTime: '16:00',
+    directorIds: ['default-0'], sentTo: 'Margaret', purpose: 'Street — Teams/Zoom',
+    status: 'accepted', appointmentType: 'online',
+    sentAt: '2026-07-05T10:00:00.000Z', notes: '',
+  },
+
+  // ── James Whitfield — Annual Review (Nick + Julia) — 4 slots ─────────
+  {
+    id: 'sample-7', date: '2026-07-07', startTime: '09:30', endTime: '10:30',
+    directorIds: ['default-1', 'default-3'], sentTo: 'James Whitfield', purpose: 'Annual Review',
+    status: 'declined', appointmentType: 'in-person',
+    sentAt: '2026-07-03T14:00:00.000Z', notes: 'Client travelling week of 14th',
+  },
+  {
+    id: 'sample-8', date: '2026-07-09', startTime: '14:00', endTime: '15:00',
+    directorIds: ['default-1', 'default-3'], sentTo: 'James Whitfield', purpose: 'Annual Review',
+    status: 'sent', appointmentType: 'in-person',
+    sentAt: '2026-07-03T14:00:00.000Z', notes: 'Client travelling week of 14th',
+  },
+  {
+    id: 'sample-9', date: '2026-07-10', startTime: '11:00', endTime: '12:00',
+    directorIds: ['default-1', 'default-3'], sentTo: 'James Whitfield', purpose: 'Annual Review',
+    status: 'sent', appointmentType: 'in-person',
+    sentAt: '2026-07-03T14:00:00.000Z', notes: '',
+  },
+  {
+    id: 'sample-10', date: '2026-07-16', startTime: '10:00', endTime: '11:00',
+    directorIds: ['default-1', 'default-3'], sentTo: 'James Whitfield', purpose: 'Annual Review',
+    status: 'sent', appointmentType: 'in-person',
+    sentAt: '2026-07-03T14:00:00.000Z', notes: '',
+  },
+
+  // ── Priya Patel — Portfolio Restructure (Chris + Lisa + Kelsey) — 3 slots
+  {
+    id: 'sample-11', date: '2026-07-08', startTime: '14:30', endTime: '16:00',
+    directorIds: ['default-2', 'default-4', 'default-5'], sentTo: 'Priya Patel', purpose: 'Portfolio Restructure',
+    status: 'sent', appointmentType: 'online',
+    sentAt: '2026-07-06T08:30:00.000Z', notes: 'Complex agenda — allow 90 mins minimum',
+  },
+  {
+    id: 'sample-12', date: '2026-07-11', startTime: '10:00', endTime: '11:30',
+    directorIds: ['default-2', 'default-4', 'default-5'], sentTo: 'Priya Patel', purpose: 'Portfolio Restructure',
+    status: 'sent', appointmentType: 'online',
+    sentAt: '2026-07-06T08:30:00.000Z', notes: '',
+  },
+  {
+    id: 'sample-13', date: '2026-07-17', startTime: '13:00', endTime: '14:30',
+    directorIds: ['default-2', 'default-4', 'default-5'], sentTo: 'Priya Patel', purpose: 'Portfolio Restructure',
+    status: 'accepted', appointmentType: 'online',
+    sentAt: '2026-07-06T08:30:00.000Z', notes: '',
+  },
+
+  // ── Robert Chen — Investment Strategy (Maxine + Julian) — 2 slots ─────
+  {
+    id: 'sample-14', date: '2026-07-10', startTime: '09:00', endTime: '10:00',
+    directorIds: ['default-8', 'default-9'], sentTo: 'Robert Chen', purpose: 'Investment Strategy Review',
+    status: 'sent', appointmentType: 'in-person',
+    sentAt: '2026-07-06T11:00:00.000Z', notes: '',
+  },
+  {
+    id: 'sample-15', date: '2026-07-14', startTime: '15:00', endTime: '16:00',
+    directorIds: ['default-8', 'default-9'], sentTo: 'Robert Chen', purpose: 'Investment Strategy Review',
+    status: 'sent', appointmentType: 'in-person',
+    sentAt: '2026-07-06T11:00:00.000Z', notes: 'Robert prefers afternoons',
+  },
+
+  // ── Sarah Collins — Estate Planning (Jo + Mel) — 3 slots ─────────────
+  {
+    id: 'sample-16', date: '2026-07-08', startTime: '11:00', endTime: '12:00',
+    directorIds: ['default-10', 'default-6'], sentTo: 'Sarah Collins', purpose: 'Estate Planning',
+    status: 'declined', appointmentType: 'in-person',
+    sentAt: '2026-07-04T15:00:00.000Z', notes: '',
+  },
+  {
+    id: 'sample-17', date: '2026-07-13', startTime: '10:00', endTime: '11:00',
+    directorIds: ['default-10', 'default-6'], sentTo: 'Sarah Collins', purpose: 'Estate Planning',
+    status: 'sent', appointmentType: 'in-person',
+    sentAt: '2026-07-04T15:00:00.000Z', notes: 'Bring trust documents',
+  },
+  {
+    id: 'sample-18', date: '2026-07-15', startTime: '14:00', endTime: '15:00',
+    directorIds: ['default-10', 'default-6'], sentTo: 'Sarah Collins', purpose: 'Estate Planning',
+    status: 'sent', appointmentType: 'in-person',
+    sentAt: '2026-07-04T15:00:00.000Z', notes: '',
+  },
+
+  // ── Tom Hargreaves — Tax Review (Steve + Nick) — single slot ─────────
+  {
+    id: 'sample-19', date: '2026-07-11', startTime: '09:00', endTime: '10:00',
+    directorIds: ['default-0', 'default-1'], sentTo: 'Tom Hargreaves', purpose: 'Tax Review',
+    status: 'accepted', appointmentType: 'online',
+    sentAt: '2026-07-07T08:00:00.000Z', notes: 'Confirmed via email',
+  },
+
+  // ── Emma Blackwood — Pension Review (Julia + Cassie) — 2 slots ────────
+  {
+    id: 'sample-20', date: '2026-07-09', startTime: '11:30', endTime: '12:30',
+    directorIds: ['default-3', 'default-7'], sentTo: 'Emma Blackwood', purpose: 'Pension Review',
+    status: 'sent', appointmentType: 'online',
+    sentAt: '2026-07-05T16:00:00.000Z', notes: '',
+  },
+  {
+    id: 'sample-21', date: '2026-07-16', startTime: '09:30', endTime: '10:30',
+    directorIds: ['default-3', 'default-7'], sentTo: 'Emma Blackwood', purpose: 'Pension Review',
+    status: 'sent', appointmentType: 'online',
+    sentAt: '2026-07-05T16:00:00.000Z', notes: 'Emma requested morning slots only',
   },
 ];
+
+const DEFAULT_SLOTS: TimeSlot[] = import.meta.env.DEV ? DEV_SLOTS : [];
 
 function load<T>(key: string, fallback: T): T {
   try { return JSON.parse(localStorage.getItem(key) ?? 'null') ?? fallback; }
@@ -95,7 +192,7 @@ export function useSlots() {
     return stored.length > 0 && hasRealData ? stored : DEFAULT_DIRECTORS;
   });
   const [slots, setSlots] = useState<TimeSlot[]>(() => {
-    ['diary-slots-v2','diary-slots-v3'].forEach(k => localStorage.removeItem(k));
+    ['diary-slots-v2','diary-slots-v3','diary-slots-v4','diary-slots-v5'].forEach(k => localStorage.removeItem(k));
     return load(SLOTS_KEY, DEFAULT_SLOTS);
   });
 
