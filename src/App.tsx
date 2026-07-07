@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSlots } from './useSlots';
 import AddSlotForm from './AddSlotForm';
-import SlotCard from './SlotCard';
+import SlotGroup from './SlotGroup';
 import ConfirmModal from './ConfirmModal';
 import type { SlotStatus, TimeSlot, Director } from './types';
 import './App.css';
@@ -305,36 +305,50 @@ export default function App() {
           </div>
         )}
 
-        {searchedSlots.length === 0 ? (
-          <div className="empty-state">
-            {isSearchActive ? (
-              <>
-                <p>No slots match your search.</p>
-                <button className="btn-log-slot-empty" onClick={clearSearch}>Clear filters</button>
-              </>
-            ) : (
-              <>
-                <p>No slots here yet.</p>
-                <button className="btn-log-slot-empty" onClick={() => setDrawerOpen(true)}>
-                  + Log your first slot
-                </button>
-              </>
-            )}
-          </div>
-        ) : (
-          searchedSlots.map(slot => (
-            <SlotCard
-              key={slot.id}
-              slot={slot}
+        {(() => {
+          // Group by purpose + sentTo, preserving insertion order of first appearance
+          const groupMap = new Map<string, { purpose: string; sentTo: string; slots: TimeSlot[] }>();
+          for (const slot of searchedSlots) {
+            const key = `${slot.purpose.trim().toLowerCase()}||${slot.sentTo.trim().toLowerCase()}`;
+            if (!groupMap.has(key)) groupMap.set(key, { purpose: slot.purpose, sentTo: slot.sentTo, slots: [] });
+            groupMap.get(key)!.slots.push(slot);
+          }
+          const groups = Array.from(groupMap.values());
+          const overlapCounts = Object.fromEntries(searchedSlots.map(s => [s.id, getOverlapCount(s)]));
+
+          if (groups.length === 0) return (
+            <div className="empty-state">
+              {isSearchActive ? (
+                <>
+                  <p>No slots match your search.</p>
+                  <button className="btn-log-slot-empty" onClick={clearSearch}>Clear filters</button>
+                </>
+              ) : (
+                <>
+                  <p>No slots here yet.</p>
+                  <button className="btn-log-slot-empty" onClick={() => setDrawerOpen(true)}>
+                    + Log your first slot
+                  </button>
+                </>
+              )}
+            </div>
+          );
+
+          return groups.map(g => (
+            <SlotGroup
+              key={`${g.purpose}||${g.sentTo}`}
+              purpose={g.purpose}
+              sentTo={g.sentTo}
+              slots={g.slots}
               directors={directors}
-              overlapCount={getOverlapCount(slot)}
-              isShortWindow={shortWindowIds.has(slot.id)}
+              overlapCounts={overlapCounts}
+              shortWindowIds={shortWindowIds}
               onStatusChange={updateStatus}
               onRequestDelete={setDeleteSlotId}
               onRequestEdit={s => { setEditingSlot(s); setDrawerOpen(true); }}
             />
-          ))
-        )}
+          ));
+        })()}
       </main>
 
       {/* ── Slide-out drawer ──────────────────────────── */}

@@ -583,32 +583,84 @@ body {
 
 .btn-log-slot-empty:hover { background: #4f46e5; }
 
-/* ── Slot cards ──────────────────────────────────────── */
-.slot-card {
-  animation: fadeSlideUp 0.22s ease both;
-}
-
-.slot-card:nth-child(1) { animation-delay: 0ms; }
-.slot-card:nth-child(2) { animation-delay: 40ms; }
-.slot-card:nth-child(3) { animation-delay: 80ms; }
-.slot-card:nth-child(4) { animation-delay: 120ms; }
-.slot-card:nth-child(5) { animation-delay: 160ms; }
-.slot-card:nth-child(6) { animation-delay: 200ms; }
-.slot-card:nth-child(n+7) { animation-delay: 240ms; }
-
-.slot-card {
+/* ── Slot groups ─────────────────────────────────────── */
+.slot-group {
   background: #fff;
   border: 1px solid #e2e8f0;
   border-left: 4px solid #94a3b8;
   border-radius: 10px;
-  padding: 14px 16px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  animation: fadeSlideUp 0.22s ease both;
 }
 
-.slot-card.status-sent     { border-left-color: #6366f1; }
-.slot-card.status-accepted { border-left-color: #10b981; }
-.slot-card.status-declined { border-left-color: #ef4444; }
-.slot-card.status-expired  { border-left-color: #94a3b8; }
+.slot-group:nth-child(1) { animation-delay: 0ms; }
+.slot-group:nth-child(2) { animation-delay: 40ms; }
+.slot-group:nth-child(3) { animation-delay: 80ms; }
+.slot-group:nth-child(4) { animation-delay: 120ms; }
+.slot-group:nth-child(5) { animation-delay: 160ms; }
+.slot-group:nth-child(6) { animation-delay: 200ms; }
+.slot-group:nth-child(n+7) { animation-delay: 240ms; }
+
+.slot-group-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.slot-group-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.slot-group-purpose {
+  font-size: 1.05rem;
+}
+
+.slot-group-count {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Individual entries inside a group ───────────────── */
+.slot-entries {
+  display: flex;
+  flex-direction: column;
+}
+
+.slot-entry {
+  padding: 12px 16px;
+}
+
+.slot-entry--divider {
+  border-top: 1px solid #f1f5f9;
+}
+
+.slot-entry-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.slot-entry-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
 
 .slot-header {
   display: flex;
@@ -656,8 +708,6 @@ body {
   margin-bottom: 12px;
   font-size: 0.88rem;
 }
-
-.slot-body strong { font-size: 1.05rem; }
 
 .slot-person { color: #6366f1; }
 
