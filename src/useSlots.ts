@@ -193,7 +193,9 @@ export function useSlots() {
   });
   const [slots, setSlots] = useState<TimeSlot[]>(() => {
     ['diary-slots-v2','diary-slots-v3','diary-slots-v4','diary-slots-v5'].forEach(k => localStorage.removeItem(k));
-    return load(SLOTS_KEY, DEFAULT_SLOTS);
+    const stored = load<TimeSlot[]>(SLOTS_KEY, []);
+    if (import.meta.env.DEV && stored.length === 0) return DEV_SLOTS;
+    return stored.length > 0 ? stored : DEFAULT_SLOTS;
   });
 
   useEffect(() => { localStorage.setItem(SLOTS_KEY, JSON.stringify(slots)); }, [slots]);

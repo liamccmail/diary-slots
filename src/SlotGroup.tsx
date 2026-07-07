@@ -84,7 +84,7 @@ export default function SlotGroup({
           const isShortWindow = shortWindowIds.has(slot.id);
 
           return (
-            <div key={slot.id} className={`slot-entry${i > 0 ? ' slot-entry--divider' : ''}`}>
+            <div key={slot.id} className={`slot-entry${i > 0 ? ' slot-entry--divider' : ''}`} style={{ borderLeftColor: borderColor }}>
               <div className="slot-entry-top">
                 <span className="slot-datetime">{formatDate(slot.date)} &nbsp; {slot.startTime}–{slot.endTime}</span>
                 <div className="slot-header-right">
