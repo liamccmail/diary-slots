@@ -274,6 +274,32 @@ body {
   justify-content: space-between;
 }
 
+/* Sort pills */
+.sort-pills {
+  display: flex;
+  gap: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sort-pill {
+  background: #fff;
+  border: none;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+
+.sort-pill:not(:last-child) { border-right: 1px solid #e2e8f0; }
+.sort-pill:hover:not(.active) { background: #f8fafc; color: #1a1a2e; }
+.sort-pill.active { color: #fff; }
+
 /* Search toggle button */
 .search-toggle {
   position: relative;

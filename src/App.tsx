@@ -13,6 +13,7 @@ export default function App() {
 
   const [activeDirectorId, setActiveDirectorId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [sortBy, setSortBy] = useState<'recent' | 'upcoming'>('recent');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchClosing, setSearchClosing] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -46,10 +47,17 @@ export default function App() {
     : tabSlots.filter(s => s.status === statusFilter);
 
   const q = debouncedSearch.toLowerCase().trim();
-  const searchedSlots = visibleSlots.filter(slot => {
+  const filteredSlots = visibleSlots.filter(slot => {
     if (q && !slot.purpose.toLowerCase().includes(q) && !slot.sentTo.toLowerCase().includes(q)) return false;
     if (searchDirFilter.length > 0 && !searchDirFilter.every(id => slot.directorIds.includes(id))) return false;
     return true;
+  });
+
+  const searchedSlots = [...filteredSlots].sort((a, b) => {
+    if (sortBy === 'upcoming') {
+      return a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime);
+    }
+    return new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime();
   });
 
   const isSearchActive = q.length > 0 || searchDirFilter.length > 0;
@@ -214,6 +222,11 @@ export default function App() {
               {tabSlots.filter(s => s.status === 'sent').length} slot{tabSlots.filter(s => s.status === 'sent').length !== 1 ? 's' : ''} awaiting response
             </p>
           </div>
+          <div className="sort-pills">
+            <button className={`sort-pill ${sortBy === 'recent' ? 'active' : ''}`} style={sortBy === 'recent' ? { background: accentColor, borderColor: accentColor } : {}} onClick={() => setSortBy('recent')}>Recently added</button>
+            <button className={`sort-pill ${sortBy === 'upcoming' ? 'active' : ''}`} style={sortBy === 'upcoming' ? { background: accentColor, borderColor: accentColor } : {}} onClick={() => setSortBy('upcoming')}>Upcoming</button>
+          </div>
+
           <button
             className={`search-toggle ${searchOpen && !searchClosing ? 'active' : ''}`}
             onClick={() => searchOpen ? closeSearch() : setSearchOpen(true)}
