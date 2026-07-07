@@ -30,6 +30,7 @@ export default function App() {
   const [editingSlot, setEditingSlot] = useState<TimeSlot | null>(null);
   const [removeModalId, setRemoveModalId] = useState<string | null>(null);
   const [deleteSlotId, setDeleteSlotId] = useState<string | null>(null);
+  const [acceptModal, setAcceptModal] = useState<{ slotId: string; otherIds: string[]; purpose: string; sentTo: string } | null>(null);
 
   type ShortWindowAlert = { newSlot: TimeSlot; items: Array<{ neighbor: TimeSlot; directors: Director[]; gapMins: number }> };
   const [shortWindowAlert, setShortWindowAlert] = useState<ShortWindowAlert | null>(null);
@@ -346,6 +347,13 @@ export default function App() {
               onStatusChange={updateStatus}
               onRequestDelete={setDeleteSlotId}
               onRequestEdit={s => { setEditingSlot(s); setDrawerOpen(true); }}
+              onRequestAccept={(slotId, otherIds) => {
+                if (otherIds.length === 0) {
+                  updateStatus(slotId, 'accepted');
+                } else {
+                  setAcceptModal({ slotId, otherIds, purpose: g.purpose, sentTo: g.sentTo });
+                }
+              }}
             />
           ));
         })()}
@@ -422,6 +430,28 @@ export default function App() {
           />
         );
       })()}
+
+      {/* ── Accept & clear modal ─────────────────────────── */}
+      {acceptModal && (
+        <ConfirmModal
+          title="Accept this time?"
+          icon="✓"
+          confirmVariant="success"
+          confirmLabel="Accept & remove others"
+          body={<>
+            Accepting this slot will permanently remove the other{' '}
+            <strong>{acceptModal.otherIds.length} time slot{acceptModal.otherIds.length !== 1 ? 's' : ''}</strong>{' '}
+            sent for <strong>{acceptModal.purpose}</strong> with <strong>{acceptModal.sentTo}</strong>.
+            <br /><br />This cannot be undone.
+          </>}
+          onConfirm={() => {
+            updateStatus(acceptModal.slotId, 'accepted');
+            acceptModal.otherIds.forEach(id => deleteSlot(id));
+            setAcceptModal(null);
+          }}
+          onCancel={() => setAcceptModal(null)}
+        />
+      )}
 
       {/* ── Delete slot modal ─────────────────────────── */}
       {deleteSlotId && (() => {

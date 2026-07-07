@@ -10,6 +10,7 @@ interface Props {
   onStatusChange: (id: string, status: SlotStatus) => void;
   onRequestDelete: (id: string) => void;
   onRequestEdit: (slot: TimeSlot) => void;
+  onRequestAccept: (slotId: string, otherIds: string[]) => void;
 }
 
 const STATUS_LABELS: Record<SlotStatus, string> = {
@@ -56,7 +57,7 @@ function groupBorderColor(slots: TimeSlot[], overlapCounts: Record<string, numbe
 
 export default function SlotGroup({
   purpose, sentTo, slots, directors, overlapCounts, shortWindowIds,
-  onStatusChange, onRequestDelete, onRequestEdit,
+  onStatusChange, onRequestDelete, onRequestEdit, onRequestAccept,
 }: Props) {
   const sorted = [...slots].sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
   const borderColor = groupBorderColor(slots, overlapCounts);
@@ -126,7 +127,18 @@ export default function SlotGroup({
                 {(['sent', 'accepted', 'declined', 'expired'] as SlotStatus[])
                   .filter(s => s !== slot.status)
                   .map(s => (
-                    <button key={s} className="btn-secondary" onClick={() => onStatusChange(slot.id, s)}>
+                    <button
+                      key={s}
+                      className="btn-secondary"
+                      onClick={() => {
+                        if (s === 'accepted') {
+                          const otherIds = slots.filter(other => other.id !== slot.id).map(other => other.id);
+                          onRequestAccept(slot.id, otherIds);
+                        } else {
+                          onStatusChange(slot.id, s);
+                        }
+                      }}
+                    >
                       Mark {STATUS_LABELS[s]}
                     </button>
                   ))}

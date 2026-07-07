@@ -903,6 +903,10 @@ body {
 }
 
 .modal-confirm:hover { background: #dc2626; }
+.modal-confirm--danger { background: #ef4444; }
+.modal-confirm--danger:hover { background: #dc2626; }
+.modal-confirm--success { background: #10b981; }
+.modal-confirm--success:hover { background: #059669; }
 
 /* ── Drawer ──────────────────────────────────────────── */
 .drawer-overlay {
