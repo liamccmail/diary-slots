@@ -222,9 +222,37 @@ export default function App() {
               {tabSlots.filter(s => s.status === 'sent').length} slot{tabSlots.filter(s => s.status === 'sent').length !== 1 ? 's' : ''} awaiting response
             </p>
           </div>
-          <div className="sort-pills">
-            <button className={`sort-pill ${sortBy === 'recent' ? 'active' : ''}`} style={sortBy === 'recent' ? { background: accentColor, borderColor: accentColor } : {}} onClick={() => setSortBy('recent')}>Recently added</button>
-            <button className={`sort-pill ${sortBy === 'upcoming' ? 'active' : ''}`} style={sortBy === 'upcoming' ? { background: accentColor, borderColor: accentColor } : {}} onClick={() => setSortBy('upcoming')}>Upcoming</button>
+
+          <div className="header-controls">
+            {/* Status filters */}
+            <div className="status-filter-bar">
+              {([
+                { key: 'all',      label: 'All',      icon: '◎' },
+                { key: 'sent',     label: 'Sent',     icon: '↗' },
+                { key: 'accepted', label: 'Accepted', icon: '✓' },
+                { key: 'declined', label: 'Declined', icon: '✕' },
+                { key: 'expired',  label: 'Expired',  icon: '⏱' },
+              ] as { key: StatusFilter; label: string; icon: string }[]).map(({ key: f, label, icon }) => (
+                <button
+                  key={f}
+                  className={`filter-btn ${statusFilter === f ? 'active' : ''}`}
+                  style={statusFilter === f ? { background: accentColor, borderColor: accentColor } : {}}
+                  onClick={() => setStatusFilter(f)}
+                >
+                  <span className="filter-icon">{icon}</span>
+                  {label}
+                  <span className="filter-count">
+                    {f === 'all' ? tabSlots.length : tabSlots.filter(s => s.status === f).length}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Sort */}
+            <div className="sort-pills">
+              <button className={`sort-pill ${sortBy === 'recent' ? 'active' : ''}`} style={sortBy === 'recent' ? { background: accentColor, borderColor: accentColor } : {}} onClick={() => setSortBy('recent')}>⊕ Recent</button>
+              <button className={`sort-pill ${sortBy === 'upcoming' ? 'active' : ''}`} style={sortBy === 'upcoming' ? { background: accentColor, borderColor: accentColor } : {}} onClick={() => setSortBy('upcoming')}>📅 Upcoming</button>
+            </div>
           </div>
 
           <button
@@ -282,22 +310,6 @@ export default function App() {
             )}
           </div>
         )}
-
-        <div className="status-filter-bar">
-          {(['all', 'sent', 'accepted', 'declined', 'expired'] as StatusFilter[]).map(f => (
-            <button
-              key={f}
-              className={`filter-btn ${statusFilter === f ? 'active' : ''}`}
-              style={statusFilter === f ? { background: accentColor, borderColor: accentColor } : {}}
-              onClick={() => setStatusFilter(f)}
-            >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-              <span className="filter-count">
-                {f === 'all' ? tabSlots.length : tabSlots.filter(s => s.status === f).length}
-              </span>
-            </button>
-          ))}
-        </div>
 
         {/* ── Short window alert ── */}
         {shortWindowAlert && (

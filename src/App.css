@@ -272,6 +272,17 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1;
+  justify-content: flex-end;
 }
 
 /* Sort pills */
@@ -484,33 +495,39 @@ body {
 /* Status filter bar */
 .status-filter-bar {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
 }
 
 .filter-btn {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 20px;
-  padding: 5px 14px;
-  font-size: 0.8rem;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: #475569;
+  gap: 5px;
+  color: #64748b;
   transition: all 0.15s;
+  font-family: inherit;
 }
 
-.filter-btn:hover { border-color: #6366f1; color: #6366f1; }
-.filter-btn.active { color: #fff; }
+.filter-btn:hover:not(.active) { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
+.filter-btn.active { color: #fff; border-color: transparent; }
+
+.filter-icon {
+  font-size: 0.82rem;
+  line-height: 1;
+}
 
 .filter-count {
-  background: rgba(0,0,0,0.1);
-  border-radius: 10px;
-  padding: 1px 6px;
-  font-size: 0.72rem;
+  background: rgba(0,0,0,0.08);
+  border-radius: 8px;
+  padding: 1px 5px;
+  font-size: 0.7rem;
   font-weight: 700;
 }
 
